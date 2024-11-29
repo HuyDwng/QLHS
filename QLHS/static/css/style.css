@@ -1,3 +1,5 @@
-.no-pointer {
-    pointer-events: none;
-  }
+/* Đảm bảo thanh thông báo có chiều rộng 100% */
+.alert {
+    width: 100% !important;
+    margin-bottom: 20px !important; 
+}

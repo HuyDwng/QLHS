@@ -1,7 +1,10 @@
-from flask import render_template, Flask, jsonify, request, flash, redirect, url_for
+from flask import render_template, Flask, jsonify, request, flash, redirect, url_for, session
 from flask_mysqldb import MySQL
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+
+app.secret_key = 'your_unique_secret_key'
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -18,23 +21,86 @@ def index():
     cur.close()
     return render_template('index.html', students=data)
 
-
-@app.route('/login')
+### LOGIN start ###
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+
+        if user and check_password_hash(user[2], password):  # `user[2]` là cột mật khẩu
+            # Lưu thông tin vào session
+            session['username'] = user[1]  # `user[1]` là cột tên đăng nhập
+            session['role'] = user[3]      # `user[3]` là cột vai trò
+
+            # Điều hướng dựa trên vai trò
+            if user[3] == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user[3] == 'teacher':
+                return redirect(url_for('teacher_dashboard'))
+            elif user[3] == 'staff':
+                return redirect(url_for('staff_dashboard'))
+        else:
+            # Đảm bảo chỉ gọi flash một lần
+            flash("Tên đăng nhập hoặc mật khẩu không đúng", "error")
+            return redirect(url_for('login'))  # Redirect để tránh gửi lại form khi có lỗi
+
     return render_template('login.html')
 
+
+### LOGIN ###
+
+
 ### ADMIN start ###
+
+@app.route('/admin')
+def admin_dashboard():
+    if 'role' in session and session['role'] == 'admin':
+        return render_template('admin.html')
+    else:
+        flash("Bạn không có quyền truy cập trang này", "error")
+        return redirect(url_for('login'))
 
 ### Thống kê báo cáo start ###
 @app.route('/report')
 def report():
     return render_template('report.html')
 
-### Thống kê báo cáo start ###
+### Thống kê báo cáo end ###
 
-@app.route('/create')
-def create():
-    return render_template('create.html')
+
+### Tạo tài khoản start ###
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+        
+        # Mã hóa mật khẩu
+        hashed_password = generate_password_hash(password)
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", 
+                    (username, hashed_password, role))
+        mysql.connection.commit()
+        cur.close()
+
+        # Flash success message
+        flash("Tạo tài khoản thành công!", "success")
+        
+        # Render lại trang đăng ký mà không redirect
+        return render_template('register.html')
+    
+    return render_template('register.html')
+
+
+### Tạo tài khoản end ###
 
 ### Thay đổi quy định start ###
 @app.route('/rule', methods=['GET', 'POST'])
@@ -108,6 +174,27 @@ def handle_action(action):
 ### Quản lý môn học end ###
 
 ### ADMIN end ###
+
+
+### Teacher start ###
+@app.route('/teacher')
+def teacher_dashboard():
+    if 'role' in session and session['role'] == 'teacher':
+        return render_template('teacher.html')
+    else:
+        flash("Bạn không có quyền truy cập trang này", "error")
+        return redirect(url_for('login'))
+### Teacher end ###
+
+### Staff start ###
+@app.route('/staff')
+def staff_dashboard():
+    if 'role' in session and session['role'] == 'staff':
+        return render_template('staff.html')
+    else:
+        flash("Bạn không có quyền truy cập trang này", "error")
+        return redirect(url_for('login'))
+### Staff end ###
 
 if __name__ == '__main__':
     app.run(debug=True)
