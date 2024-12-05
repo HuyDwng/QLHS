@@ -13,10 +13,39 @@ app.config['MYSQL_DB'] = 'student_management'
 
 mysql = MySQL(app)
 
+# Hàm kiểm tra và thêm tài khoản mặc định
+def ensure_default_users():
+    cur = mysql.connection.cursor()
+
+    # Kiểm tra và thêm tài khoản admin
+    cur.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+    if cur.fetchone()[0] == 0:
+        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", 
+                    ('admin', generate_password_hash('admin123'), 'admin'))
+
+    # Kiểm tra và thêm tài khoản teacher
+    cur.execute("SELECT COUNT(*) FROM users WHERE username = 'teacher'")
+    if cur.fetchone()[0] == 0:
+        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", 
+                    ('teacher', generate_password_hash('teacher123'), 'teacher'))
+
+    # Kiểm tra và thêm tài khoản staff
+    cur.execute("SELECT COUNT(*) FROM users WHERE username = 'staff'")
+    if cur.fetchone()[0] == 0:
+        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", 
+                    ('staff', generate_password_hash('staff123'), 'staff'))
+
+    mysql.connection.commit()
+    cur.close()
+
+# Gọi hàm trong application context
+with app.app_context():
+    ensure_default_users()
+
 @app.route('/')
 def index():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM students")
+    cur.execute("SELECT * FROM student")
     data = cur.fetchall()
     cur.close()
     return render_template('index.html', students=data)
@@ -27,6 +56,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        role = request.form['role']  # Vai trò được gửi từ form (value: teacher, staff, admin)
 
         cur = mysql.connection.cursor()
         cur.execute("SELECT * FROM users WHERE username = %s", (username,))
@@ -34,43 +64,122 @@ def login():
         cur.close()
 
         if user and check_password_hash(user[2], password):  # `user[2]` là cột mật khẩu
-            # Lưu thông tin vào session
-            session['username'] = user[1]  # `user[1]` là cột tên đăng nhập
-            session['role'] = user[3]      # `user[3]` là cột vai trò
+            if user[3] == role:  # So sánh role trong DB với vai trò từ form
+                session['username'] = user[1]  # `user[1]` là cột tên đăng nhập
+                session['role'] = user[3]      # `user[3]` là cột vai trò
 
-            # Điều hướng dựa trên vai trò
-            if user[3] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user[3] == 'teacher':
-                return redirect(url_for('teacher_dashboard'))
-            elif user[3] == 'staff':
-                return redirect(url_for('staff_dashboard'))
+                # Điều hướng dựa trên vai trò
+                if role == 'admin':
+                    return redirect(url_for('admin_dashboard'))
+                elif role == 'teacher':
+                    return redirect(url_for('teacher_dashboard'))
+                elif role == 'staff':
+                    return redirect(url_for('staff_dashboard'))
+            else:
+                flash("Vai trò không đúng với tài khoản!", "error")
         else:
-            # Đảm bảo chỉ gọi flash một lần
-            flash("Tên đăng nhập hoặc mật khẩu không đúng", "error")
-            return redirect(url_for('login'))  # Redirect để tránh gửi lại form khi có lỗi
+            flash("Tên đăng nhập hoặc mật khẩu không đúng!", "error")
+
+        return redirect(url_for('login'))
 
     return render_template('login.html')
+### LOGIN end ###
 
+### LOGOUT start ###
+@app.route('/logout')
+def logout():
+    # Xóa thông tin trong session
+    session.pop('username', None)
+    session.pop('role', None)
 
-### LOGIN ###
-
+    return redirect(url_for('index'))  
+### LOGOUT end ###
 
 ### ADMIN start ###
 
-@app.route('/admin')
+@app.route('/admin_dashboard')
 def admin_dashboard():
-    if 'role' in session and session['role'] == 'admin':
-        return render_template('admin.html')
-    else:
-        flash("Bạn không có quyền truy cập trang này", "error")
+    if session.get('role') != 'admin':
+        flash("Bạn không có quyền truy cập vào trang này", "error")
         return redirect(url_for('login'))
+    return render_template('admin.html')  
 
 ### Thống kê báo cáo start ###
-@app.route('/report')
+@app.route('/report', methods=['GET', 'POST'])
 def report():
-    return render_template('report.html')
+    if request.method == 'POST':
+        subject_id = request.form['subject']
+        year_id = request.form['year']
+        semester_id = request.form['semester']
 
+        # Truy vấn cơ sở dữ liệu để lấy kết quả báo cáo
+        cur = mysql.connection.cursor()
+
+        # Truy vấn lấy thông tin môn học, năm học, học kỳ, lớp học và số lượng học sinh đạt yêu cầu
+        query = '''
+        SELECT c.class_name, 
+               COUNT(s.studentID) AS total_students,
+               SUM(CASE WHEN avg_point >= 5 THEN 1 ELSE 0 END) AS pass_students
+        FROM class c
+        JOIN study st ON st.classID = c.classID
+        JOIN Student s ON st.studentID = s.studentID
+        JOIN (
+            SELECT p.studentID, AVG(pd.value) AS avg_point
+            FROM Point p
+            JOIN PointDetails pd ON p.pointID = pd.pointID
+            WHERE p.subjectID = %s AND p.semesterID = %s
+            GROUP BY p.studentID
+        ) AS avg_points ON avg_points.studentID = s.studentID
+        JOIN Semester sm ON sm.semesterID = %s
+        JOIN Year y ON sm.yearID = y.yearID
+        WHERE y.yearID = %s
+        GROUP BY c.classID
+        '''
+        
+        cur.execute(query, (subject_id, semester_id, semester_id, year_id))
+        report_data = cur.fetchall()
+        cur.close()
+
+        # Tính tỷ lệ đạt
+        report_data_with_rate = []
+        for row in report_data:
+            total_students = row[1]
+            pass_students = row[2]
+            pass_rate = (pass_students / total_students) * 100 if total_students else 0
+            report_data_with_rate.append({
+                'class_name': row[0],
+                'total_students': total_students,
+                'pass_students': pass_students,
+                'pass_rate': round(pass_rate, 2)
+            })
+
+        # Lấy danh sách môn học, năm học và học kỳ
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM Subject")
+        subjects = cur.fetchall()
+        cur.execute("SELECT * FROM Year")
+        years = cur.fetchall()
+        cur.execute("SELECT * FROM Semester")  # Lấy danh sách học kỳ
+        semesters = cur.fetchall()
+        cur.close()
+
+        return render_template('report.html', 
+                               report_data=report_data_with_rate, 
+                               subjects=subjects, 
+                               years=years,
+                               semesters=semesters)
+
+    else:
+        # GET request: lấy danh sách môn học, năm học và học kỳ
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM Subject")
+        subjects = cur.fetchall()
+        cur.execute("SELECT * FROM Year")
+        years = cur.fetchall()
+        cur.execute("SELECT * FROM Semester")  # Lấy danh sách học kỳ
+        semesters = cur.fetchall()
+        cur.close()
+        return render_template('report.html', subjects=subjects, years=years, semesters=semesters)
 ### Thống kê báo cáo end ###
 
 
@@ -177,23 +286,21 @@ def handle_action(action):
 
 
 ### Teacher start ###
-@app.route('/teacher')
+@app.route('/teacher_dashboard')
 def teacher_dashboard():
-    if 'role' in session and session['role'] == 'teacher':
-        return render_template('teacher.html')
-    else:
-        flash("Bạn không có quyền truy cập trang này", "error")
+    if session.get('role') != 'teacher':
+        flash("Bạn không có quyền truy cập vào trang này", "error")
         return redirect(url_for('login'))
+    return render_template('teacher.html') 
 ### Teacher end ###
 
 ### Staff start ###
-@app.route('/staff')
+@app.route('/staff_dashboard')
 def staff_dashboard():
-    if 'role' in session and session['role'] == 'staff':
-        return render_template('staff.html')
-    else:
-        flash("Bạn không có quyền truy cập trang này", "error")
+    if session.get('role') != 'staff':
+        flash("Bạn không có quyền truy cập vào trang này", "error")
         return redirect(url_for('login'))
+    return render_template('staff.html')
 ### Staff end ###
 
 if __name__ == '__main__':
