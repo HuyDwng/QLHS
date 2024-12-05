@@ -107,21 +107,36 @@ def admin_dashboard():
 ### Thống kê báo cáo start ###
 @app.route('/report', methods=['GET', 'POST'])
 def report():
+    subject_id = None
+    semester_id = None
+    year_id = None
+    subject_name = None
+    year_name = None
+    semester_name = None
+    show_chart = False  # Biến để xác định có hiển thị biểu đồ hay không
+
+    # Lấy dữ liệu môn học, năm học, học kỳ để hiển thị trên form
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM Subject")
+    subjects = cur.fetchall()
+    cur.execute("SELECT * FROM Year")
+    years = cur.fetchall()
+    cur.execute("SELECT * FROM Semester")
+    semesters = cur.fetchall()
+
     if request.method == 'POST':
-        subject_id = request.form['subject']
-        year_id = request.form['year']
-        semester_id = request.form['semester']
+        subject_id = int(request.form['subject']) if request.form['subject'] else None
+        year_id = int(request.form['year']) if request.form['year'] else None
+        semester_id = int(request.form['semester']) if request.form['semester'] else None
+        show_chart = 'showChart' in request.form  # Kiểm tra nếu người dùng chọn checkbox
 
         # Truy vấn cơ sở dữ liệu để lấy kết quả báo cáo
-        cur = mysql.connection.cursor()
-
-        # Truy vấn lấy thông tin môn học, năm học, học kỳ, lớp học và số lượng học sinh đạt yêu cầu
         query = '''
         SELECT c.class_name, 
                COUNT(s.studentID) AS total_students,
                SUM(CASE WHEN avg_point >= 5 THEN 1 ELSE 0 END) AS pass_students
-        FROM class c
-        JOIN study st ON st.classID = c.classID
+        FROM Class c
+        JOIN Study st ON st.classID = c.classID
         JOIN Student s ON st.studentID = s.studentID
         JOIN (
             SELECT p.studentID, AVG(pd.value) AS avg_point
@@ -133,11 +148,23 @@ def report():
         JOIN Semester sm ON sm.semesterID = %s
         JOIN Year y ON sm.yearID = y.yearID
         WHERE y.yearID = %s
-        GROUP BY c.classID
+        GROUP BY c.class_name
         '''
-        
+
         cur.execute(query, (subject_id, semester_id, semester_id, year_id))
         report_data = cur.fetchall()
+
+        # Lấy tên môn học từ bảng Subject
+        cur.execute("SELECT subjectName FROM Subject WHERE subjectID = %s", (subject_id,))
+        subject_name = cur.fetchone()[0]
+
+        # Lấy tên năm học từ bảng Year (sửa theo yearName)
+        cur.execute("SELECT yearName FROM Year WHERE yearID = %s", (year_id,))
+        year_name = cur.fetchone()[0]
+
+        # Xác định tên học kỳ từ semester_id
+        semester_name = "Học kỳ 1" if semester_id == 1 else "Học kỳ 2"
+        
         cur.close()
 
         # Tính tỷ lệ đạt
@@ -153,31 +180,21 @@ def report():
                 'pass_rate': round(pass_rate, 2)
             })
 
-        # Lấy danh sách môn học, năm học và học kỳ
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM Subject")
-        subjects = cur.fetchall()
-        cur.execute("SELECT * FROM Year")
-        years = cur.fetchall()
-        cur.execute("SELECT * FROM Semester")  # Lấy danh sách học kỳ
-        semesters = cur.fetchall()
-        cur.close()
-
         return render_template('report.html', 
                                report_data=report_data_with_rate, 
+                               subject_name=subject_name,
+                               year_name=year_name,
+                               semester_name=semester_name,
                                subjects=subjects, 
-                               years=years,
-                               semesters=semesters)
+                               years=years, 
+                               semesters=semesters,
+                               subject_id=subject_id,
+                               semester_id=semester_id,
+                               year_id=year_id,
+                               show_chart=show_chart)  # Truyền thêm thông tin show_chart vào template
 
     else:
         # GET request: lấy danh sách môn học, năm học và học kỳ
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM Subject")
-        subjects = cur.fetchall()
-        cur.execute("SELECT * FROM Year")
-        years = cur.fetchall()
-        cur.execute("SELECT * FROM Semester")  # Lấy danh sách học kỳ
-        semesters = cur.fetchall()
         cur.close()
         return render_template('report.html', subjects=subjects, years=years, semesters=semesters)
 ### Thống kê báo cáo end ###
