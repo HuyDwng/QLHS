@@ -266,37 +266,45 @@ def rule():
 ### Thay đổi quy định end ###
 
 ### Quản lý môn học start ###
-
-@app.route('/manage')
+@app.route('/manage', methods=['GET', 'POST'])
 def manage():
-    return render_template('manage.html')
+    cur = mysql.connection.cursor()
 
-@app.route("/search/<action>")
-def search_course(action):
-    query = request.args.get("query", "").strip()  # Loại bỏ khoảng trắng thừa
+    if request.method == 'POST':
+        # Thêm môn học
+        if 'add_subject' in request.form:
+            subject_name = request.form['subjectName']
+            subject_code = request.form['subjectCode']
+            
+            cur.execute("INSERT INTO Subject (subjectCode, subjectName) VALUES (%s, %s)", (subject_code, subject_name))
+            mysql.connection.commit()
+            flash("Thêm môn học thành công!", "success")
 
-    # Dữ liệu giả lập từ database (thay thế bằng truy vấn thực tế nếu cần)
-    courses = ["Toán", "Lý", "Hóa", "Sinh"]
+        # Xóa môn học
+        elif 'delete_subject' in request.form:
+            subject_id = request.form['subjectID']
+            cur.execute("DELETE FROM Subject WHERE subjectID = %s", (subject_id,))
+            mysql.connection.commit()
+            flash("Xóa môn học thành công!", "success")
 
-    if action in ["view", "update", "delete"]:
-        # Kiểm tra nếu môn học có tồn tại (phân biệt chữ hoa chữ thường)
-        if query in courses:
-            return jsonify({"success": True, "data": f"Môn học '{query}' có trong danh sách."})
-        else:
-            return jsonify({"success": False, "error": f"Môn học '{query}' không tồn tại."})
-    else:
-        return jsonify({"success": False, "error": "Hành động không hợp lệ."}), 400
+        # Cập nhật môn học
+        elif 'edit_subject' in request.form:
+            subject_id = request.form['subjectID']
+            subject_name = request.form['subjectName']
+            subject_code = request.form['subjectCode']
+            cur.execute(
+                "UPDATE Subject SET subjectCode = %s, subjectName = %s WHERE subjectID = %s",
+                (subject_code, subject_name, subject_id),
+            )
+            mysql.connection.commit()
+            flash("Cập nhật môn học thành công!", "success")
 
+    # Hiển thị danh sách môn học
+    cur.execute("SELECT * FROM Subject")
+    subjects = cur.fetchall()
+    cur.close()
 
-@app.route("/action/<action>")
-def handle_action(action):
-    courses = ["Toán", "Lý", "Hóa", "Sinh"]  # Dữ liệu giả lập
-
-    if action == "add":
-        return render_template("partials/add_course.html")
-    else:
-        return jsonify({"success": False, "error": "Hành động không hỗ trợ."}), 400
-
+    return render_template('manage.html', subjects=subjects)
 ### Quản lý môn học end ###
 
 ### ADMIN end ###
