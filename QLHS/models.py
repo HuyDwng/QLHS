@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from . import db
 from enum import Enum as PyEnum
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 
 # Enum cho UserRole
 class UserRole(PyEnum):
@@ -19,6 +19,9 @@ class userLogin(db.Model, UserMixin):
     username = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum(UserRole), nullable=False)  # Sử dụng Enum cho role
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)  # Kiểm tra mật khẩu
 
 # Model User
 class User(db.Model, UserMixin):

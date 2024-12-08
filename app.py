@@ -1,5 +1,6 @@
 from QLHS import create_app
 from flask import render_template, Flask, jsonify, request, flash, redirect, url_for, session
+from QLHS.models import userLogin
 
 app = create_app()
 
@@ -10,6 +11,27 @@ def index():
 ###LOGIN start###
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+
+        # Kiểm tra thông tin đăng nhập
+        user = userLogin.query.filter_by(username=username).first()
+
+        if user and user.check_password(password) and user.role.name == role.upper():  # Kiểm tra vai trò
+            session['username'] = username
+            session['role'] = role
+
+            if role == 'admin':
+                return redirect(url_for('admin_page'))
+            elif role == 'teacher':
+                return redirect(url_for('teacher_page'))
+            elif role == 'staff':
+                return redirect(url_for('staff_page'))
+        else:
+            flash('Tên đăng nhập, mật khẩu hoặc vai trò không đúng!', 'danger')
+
     return render_template('login.html')
 ###LOGIN end###
 
@@ -20,8 +42,8 @@ def logout():
 ###LOGOUT end###
 
 ###ADMIN start###
-@app.route('/admin')
-def admin():
+@app.route('/admin_page')
+def admin_page():
     return render_template('admin.html')
 
 ###Thống kê báo cáo start###
@@ -49,14 +71,14 @@ def manage():
 ###ADMIN end###
 
 ###Teacher start###
-@app.route('/teacher')
-def teacher():
+@app.route('/teacher_page')
+def teacher_page():
     return render_template('teacher.html') 
 ###Teacher end###
 
 ###Staff start###
-@app.route('/staff')
-def staff():
+@app.route('/staff_page')
+def staff_page():
     return render_template('staff.html')
 ###Staff end###
 

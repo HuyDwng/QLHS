@@ -1,21 +1,39 @@
 from QLHS import create_app, db  
-from QLHS.models import User, userLogin, PhoneNumber, Email, Admin, Staff, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
+from QLHS.models import User, userLogin, UserRole, PhoneNumber, Email, Admin, Staff, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
+from werkzeug.security import generate_password_hash
 
 app = create_app()
 
 def add_sample_data():
     with app.app_context():
         # Thêm người dùng
-        admin = Admin(user=User (name='Admin User', userAccount='admin', password='123'))
-        teacher1 = Teacher(user=User (name='Teacher One', userAccount='teacher1', password='123'))
-        teacher2 = Teacher(user=User (name='Teacher Two', userAccount='teacher2', password='456'))
-        staff = Staff(user=User (name='Staff User', userAccount='staff', password='123'))
+        admin_user = User(name='Admin User', userAccount='admin', password=generate_password_hash('123'))
+        admin_login = userLogin(username='admin', password=generate_password_hash('123'), role=UserRole.ADMIN)  
 
-        db.session.add(admin)
-        db.session.add(teacher1)
-        db.session.add(teacher2)
-        db.session.add(staff)
+        teacher_user_1 = User(name='Teacher 1', userAccount='teacher1', password=generate_password_hash('123'))
+        teacher_login_1 = userLogin(username='teacher1', password=generate_password_hash('123'), role=UserRole.TEACHER)
 
+        teacher_user_2 = User(name='Teacher 2', userAccount='teacher2', password=generate_password_hash('456'))
+        teacher_login_2 = userLogin(username='teacher2', password=generate_password_hash('456'), role=UserRole.TEACHER)
+
+        staff_user = User(name='Staff User', userAccount='staff', password=generate_password_hash('123'))
+        staff_login = userLogin(username='staff', password=generate_password_hash('123'), role=UserRole.STAFF)
+
+        # Thêm vào cơ sở dữ liệu
+        db.session.add(admin_user)
+        db.session.add(admin_login)
+
+        db.session.add(teacher_user_1)
+        db.session.add(teacher_login_1)
+
+        db.session.add(teacher_user_2)
+        db.session.add(teacher_login_2)
+
+        db.session.add(staff_user)
+        db.session.add(staff_login)
+
+        # Commit các thay đổi
+        db.session.commit()
         # Thêm lớp học
         class_rule = ClassRule(maxNumber=30)
         db.session.add(class_rule)
@@ -57,11 +75,11 @@ def add_sample_data():
         db.session.add(point1)
         db.session.add(point2)
 
-        # Thêm quan hệ dạy học
-        teach1 = Teach(teacher=teacher1, class_=class1)
-        teach2 = Teach(teacher=teacher2, class_=class2)
-        db.session.add(teach1)
-        db.session.add(teach2)
+        # # Thêm quan hệ dạy học
+        # teach1 = Teach(teacher=teacher1, class_=class1)
+        # teach2 = Teach(teacher=teacher2, class_=class2)
+        # db.session.add(teach1)
+        # db.session.add(teach2)
 
         # Thêm quan hệ học
         study1 = Study(student=student1, class_=class1)
