@@ -1,0 +1,43 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Tìm Kiếm Môn Học</h1>
+
+    <!-- Form tìm kiếm môn học -->
+    <form method="GET" action="{{ url_for('search_subject') }}">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Tìm kiếm môn học..." name="query" value="{{ query or '' }}">
+            <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        </div>
+    </form>
+
+    <!-- Hiển thị danh sách môn học tìm được -->
+    {% if query %}
+        {% if subjects %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tên môn học</th>
+                        <th>Khối lớp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ subject.subjectName }}</td>
+                        <td>
+                            {% if subject.grade == 'grade10' %}Khối 10{% elif subject.grade == 'grade11' %}Khối 11{% elif subject.grade == 'grade12' %}Khối 12{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-center">Không tìm thấy môn học nào với từ khóa "{{ query }}".</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -164,9 +164,103 @@ def rule():
 
 ###Thay đổi quy định end###
 ###Quản lý môn học start###
-@app.route('/manage', methods=['GET', 'POST'])
+@app.route('/manage', methods=['GET'])
 def manage():
     return render_template('manage.html')
+
+@app.route('/add_subject', methods=['GET', 'POST'])
+def add_subject():
+    if request.method == 'POST':
+        # Lấy dữ liệu từ form
+        subject_name = request.form.get('subject_name')
+        grade = request.form.get('grade')
+        
+        # Kiểm tra tính hợp lệ và thêm vào database
+        if subject_name and grade:
+            new_subject = Subject(subjectName=subject_name, grade=grade)
+            try:
+                db.session.add(new_subject)
+                db.session.commit()
+                flash('Thêm môn học thành công!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Lỗi khi thêm môn học: {str(e)}', 'danger')
+            return redirect(url_for('add_subject'))
+        else:
+            flash('Vui lòng nhập đầy đủ thông tin!', 'warning')
+    
+    return render_template('add_subject.html')
+
+@app.route('/update_subject', methods=['GET', 'POST'])
+def update_subject():
+    query = request.args.get('query')  # Lấy từ khóa tìm kiếm từ form
+    subjects = Subject.query.all()  # Lấy toàn bộ môn học
+
+    # Nếu có tìm kiếm, lọc danh sách môn học theo tên
+    if query:
+        subjects = Subject.query.filter(Subject.subjectName.like(f'%{query}%')).all()
+
+    if request.method == 'POST':
+        # Xử lý cập nhật môn học
+        subject_id = request.form.get('subject_id')
+        subject_name = request.form.get('subject_name')
+        grade = request.form.get('grade')
+
+        subject = Subject.query.get(subject_id)
+        if subject:
+            try:
+                subject.subjectName = subject_name
+                subject.grade = grade
+                db.session.commit()
+                flash('Cập nhật môn học thành công!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Lỗi khi cập nhật môn học: {str(e)}', 'danger')
+        else:
+            flash('Môn học không tồn tại!', 'warning')
+
+        return redirect(url_for('update_subject'))
+    
+    return render_template('update_subject.html', subjects=subjects, query=query)
+
+@app.route('/delete_subject', methods=['GET', 'POST'])
+def delete_subject():
+    # Lấy từ khóa tìm kiếm
+    query = request.args.get('query')
+    if query:
+        # Lọc danh sách môn học theo từ khóa
+        subjects = Subject.query.filter(Subject.subjectName.like(f'%{query}%')).all()
+    else:
+        # Hiển thị tất cả môn học nếu không có tìm kiếm
+        subjects = Subject.query.all()
+
+    if request.method == 'POST':
+        # Lấy ID môn học từ form
+        subject_id = request.form.get('subject_id')
+        subject = Subject.query.get(subject_id)
+        if subject:
+            try:
+                db.session.delete(subject)
+                db.session.commit()
+                flash('Xóa môn học thành công!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Lỗi khi xóa môn học: {str(e)}', 'danger')
+        else:
+            flash('Không tìm thấy môn học để xóa!', 'warning')
+        return redirect(url_for('delete_subject'))
+
+    return render_template('delete_subject.html', subjects=subjects)
+
+@app.route('/search_subject', methods=['GET'])
+def search_subject():
+    query = request.args.get('query')
+    subjects = []
+
+    if query:
+        subjects = Subject.query.filter(Subject.subjectName.like(f'%{query}%')).all()
+
+    return render_template('search_subject.html', subjects=subjects, query=query)
 ###Quản lý môn học end###
 
 ###ADMIN end###
