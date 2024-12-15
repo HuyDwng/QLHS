@@ -1,6 +1,6 @@
 from QLHS import create_app, db
 from flask import render_template, Flask, jsonify, request, flash, redirect, url_for, session
-from QLHS.models import userLogin, Subject, Year, Semester, Class, Point, Student
+from QLHS.models import userLogin, Subject, Year, Semester, Class, Point, Student, StudentRule, ClassRule
 from werkzeug.security import generate_password_hash
 
 app = create_app()
@@ -157,11 +157,77 @@ def register():
 
     return render_template('register.html')
 ###Tạo tài khoản end###
+
 ###Thay đổi quy định start###
 @app.route('/rule', methods=['GET', 'POST'])
 def rule():
-    return render_template('rule.html')
+    student_rule = StudentRule.query.first()
+    class_rule = ClassRule.query.first()
 
+    # Lấy dữ liệu từ database để hiển thị ban đầu
+    min_age = student_rule.minAge if student_rule else None
+    max_age = student_rule.maxAge if student_rule else None
+    max_number = class_rule.maxNumber if class_rule else None
+
+    success_message = None
+    errors = {
+        "minAge": None,
+        "maxAge": None,
+        "maxNumber": None
+    }
+
+    if request.method == 'POST':
+        try:
+            min_age_input = int(request.form.get('minAge', 0))
+            max_age_input = int(request.form.get('maxAge', 0))
+            max_number_input = int(request.form.get('maxNumber', 0))
+
+            # Kiểm tra điều kiện hợp lệ
+            if min_age_input <= 0:
+                errors["minAge"] = "Tuổi nhỏ nhất phải lớn hơn 0."
+            if max_age_input <= 0:
+                errors["maxAge"] = "Tuổi lớn nhất phải lớn hơn 0."
+            if max_number_input <= 0:
+                errors["maxNumber"] = "Số học sinh tối đa phải lớn hơn 0."
+            if max_age_input < min_age_input:
+                errors["maxAge"] = "Tuổi lớn nhất không thể nhỏ hơn tuổi nhỏ nhất."
+            if min_age_input > max_age_input:
+                errors["minAge"] = "Tuổi nhỏ nhất không thể lớn hơn tuổi lớn nhất."
+
+            # Nếu không có lỗi, lưu vào database
+            if not any(errors.values()):
+                if not student_rule:
+                    student_rule = StudentRule(minAge=min_age_input, maxAge=max_age_input)
+                    db.session.add(student_rule)
+                else:
+                    student_rule.minAge = min_age_input
+                    student_rule.maxAge = max_age_input
+
+                if not class_rule:
+                    class_rule = ClassRule(maxNumber=max_number_input)
+                    db.session.add(class_rule)
+                else:
+                    class_rule.maxNumber = max_number_input
+
+                db.session.commit()
+                success_message = "Lưu thay đổi thành công!"
+                # Reset dữ liệu để hiển thị thành công
+                min_age = min_age_input
+                max_age = max_age_input
+                max_number = max_number_input
+        except ValueError:
+            errors["minAge"] = "Vui lòng nhập số hợp lệ cho tuổi nhỏ nhất."
+            errors["maxAge"] = "Vui lòng nhập số hợp lệ cho tuổi lớn nhất."
+            errors["maxNumber"] = "Vui lòng nhập số hợp lệ cho số học sinh."
+
+    return render_template(
+        'rule.html',
+        min_age=min_age,
+        max_age=max_age,
+        max_number=max_number,
+        success_message=success_message,
+        errors=errors
+    )
 ###Thay đổi quy định end###
 ###Quản lý môn học start###
 @app.route('/manage', methods=['GET'])
