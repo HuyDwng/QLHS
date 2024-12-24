@@ -1,0 +1,35 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Đặt lại Mật Khẩu</h1>
+
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mt-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/reset_password/{{ token }}">
+        <div class="mb-3">
+            <label for="password" class="form-label">Mật khẩu mới:</label>
+            <input type="password" class="form-control" name="password" required placeholder="Nhập mật khẩu mới">
+        </div>
+        
+        <div class="mb-3">
+            <label for="confirm_password" class="form-label">Xác nhận mật khẩu:</label>
+            <input type="password" class="form-control" name="confirm_password" required placeholder="Xác nhận mật khẩu mới">
+        </div>
+        
+        <button type="submit" class="btn btn-success">Cập nhật mật khẩu</button>
+        <a href="/login" class="btn btn-secondary">Quay lại đăng nhập</a>
+    </form>
+</div>
+{% endblock %}

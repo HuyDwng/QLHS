@@ -1,15 +1,23 @@
-from QLHS import create_app, db
+import os
+from QLHS import create_app, db, mail
 from flask import render_template, Flask, jsonify, request, flash, redirect, url_for, session
-from QLHS.models import userLogin, Subject, Year, Semester, Class, Point, Student, StudentRule, ClassRule
+from QLHS.models import Subject, Year, Semester, Class, Point, Student, StudentRule, ClassRule, PhoneNumber, Email, User
 from werkzeug.security import generate_password_hash
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer as Serializer
+
 
 app = create_app()
+
+# Tạo một serializer để tạo và xác minh token
+s = Serializer(app.config['SECRET_KEY'])
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-###LOGIN start###
+### LOGIN start###
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -18,9 +26,9 @@ def login():
         role = request.form['role']
 
         # Kiểm tra thông tin đăng nhập
-        user = userLogin.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
-        if user and user.check_password(password) and user.role.name == role.upper():  # Kiểm tra vai trò
+        if user and user.check_password(password) and user.role.name == role.upper():  
             session['username'] = username
             session['role'] = role
 
@@ -34,11 +42,61 @@ def login():
             flash('Tên đăng nhập, mật khẩu hoặc vai trò không đúng!', 'danger')
 
     return render_template('login.html')
+### Forgotpassword start ###
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.join(Email).filter(Email.email == email).first()
+
+        if user:
+            # Tạo token
+            token = s.dumps(email, salt='password-reset-salt')
+            reset_link = url_for('reset_password', token=token, _external=True)
+
+            # Gửi email chứa link đặt lại mật khẩu
+            msg = Message("Yêu cầu đặt lại mật khẩu", recipients=[email])
+            msg.body = f'Click vào link để đặt lại mật khẩu: {reset_link}'
+            mail.send(msg)
+
+            flash('Một email đặt lại mật khẩu đã được gửi đến bạn.', 'info')
+            return redirect(url_for('login'))
+        else:
+            flash('Email không tồn tại trong hệ thống.', 'danger')
+
+    return render_template('fpass.html')
+### Forgotpassword end ###
+
+### Resetpassword start ###
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)  
+    except:
+        flash('Link đặt lại mật khẩu đã hết hạn hoặc không hợp lệ.', 'danger')
+        return redirect(url_for('login'))
+
+    user = User.query.join(Email).filter(Email.email == email).first()
+
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if password != confirm_password:
+            flash('Mật khẩu và xác nhận mật khẩu không khớp!', 'danger')
+        else:
+            user.password = generate_password_hash(password)
+            db.session.commit()
+            flash('Mật khẩu đã được cập nhật thành công!', 'success')
+            return redirect(url_for('login'))
+
+    return render_template('rpass.html', token=token)
 ###LOGIN end###
 
 ###LOGOUT start###
 @app.route('/logout')
 def logout():
+    session.clear()
     return redirect(url_for('index'))
 ###LOGOUT end###
 
@@ -132,24 +190,60 @@ def report():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Lấy dữ liệu từ form
         username = request.form['username']
         password = request.form['password']
         role = request.form['role']
+        date_of_birth = request.form['dateofbirth']
+        gender = request.form['gender']
+        phone_number = request.form['phonenumber']
+        email = request.form['email']
 
         # Kiểm tra xem tên đăng nhập đã tồn tại chưa
-        existing_user = userLogin.query.filter_by(username=username).first()
+        existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash('Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.', 'error')
             return redirect(url_for('register'))
 
-        # Mã hóa mật khẩu trước khi lưu vào cơ sở dữ liệu
+        # Kiểm tra xem số điện thoại đã tồn tại chưa
+        existing_phone = PhoneNumber.query.filter_by(phoneNumber=phone_number).first()
+        if existing_phone:
+            flash('Số điện thoại đã tồn tại. Vui lòng sử dụng số khác.', 'error')
+            return redirect(url_for('register'))
+
+        # Kiểm tra xem email đã tồn tại chưa
+        existing_email = Email.query.filter_by(email=email).first()
+        if existing_email:
+            flash('Email đã tồn tại. Vui lòng sử dụng email khác.', 'error')
+            return redirect(url_for('register'))
+
+        # Mã hóa mật khẩu trước khi lưu
         hashed_password = generate_password_hash(password)
 
-        # Tạo đối tượng UserLogin mới
-        new_user = userLogin(username=username, password=hashed_password, role=role)
+        # Tạo đối tượng User mới
+        new_user = User(
+            name=None,  # Có thể cập nhật thêm nếu muốn lưu tên
+            dateOfBirth=date_of_birth,
+            gender=gender,
+            username=username,
+            password=hashed_password,
+            role=role
+        )
 
-        # Thêm vào cơ sở dữ liệu
+        # Lưu vào cơ sở dữ liệu
         db.session.add(new_user)
+        db.session.commit()
+
+        # Lấy ID của User mới tạo
+        user_id = new_user.userID
+
+        # Tạo đối tượng PhoneNumber và Email
+        new_phone = PhoneNumber(userID=user_id, phoneNumber=phone_number)
+        new_email = Email(userID=user_id, email=email)
+
+        # Lưu vào cơ sở dữ liệu
+        db.session.add(new_phone)
+        db.session.add(new_email)
         db.session.commit()
 
         flash('Tài khoản đã được tạo thành công!', 'success')

@@ -1,0 +1,30 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Quên Mật Khẩu</h1>
+
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mt-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/forgot_password">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email:</label>
+            <input type="email" class="form-control" name="email" required placeholder="Nhập email của bạn">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Gửi yêu cầu thay đổi mật khẩu</button>
+        <a href="/login" class="btn btn-secondary">Quay lại đăng nhập</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
+from datetime import date
 import random
 from QLHS import create_app, db  
-from QLHS.models import User, userLogin, UserRole, PhoneNumber, Email, Admin, Staff, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
+from QLHS.models import User, UserRole, PhoneNumber, Email, Admin, Staff, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
 from werkzeug.security import generate_password_hash
 
 app = create_app()
@@ -8,31 +9,73 @@ app = create_app()
 def add_sample_data():
     with app.app_context():
         # Thêm người dùng
-        admin_user = User(name='Admin User', userAccount='admin', password=generate_password_hash('123'))
-        admin_login = userLogin(username='admin', password=generate_password_hash('123'), role=UserRole.ADMIN)  
+        admin_user = User(
+            username='admin',
+            password=generate_password_hash('123'),
+            role=UserRole.ADMIN,
+            name='Admin User',
+            dateOfBirth=date(1985, 1, 1),
+            gender='Male'
+        )
+        teacher_user_1 = User(
+            username='teacher1',
+            password=generate_password_hash('123'),
+            role=UserRole.TEACHER,
+            name='Teacher 1',
+            dateOfBirth=date(1990, 5, 15),
+            gender='Female'
+        )
+        teacher_user_2 = User(
+            username='teacher2',
+            password=generate_password_hash('456'),
+            role=UserRole.TEACHER,
+            name='Teacher 2',
+            dateOfBirth=date(1992, 8, 25),
+            gender='Male'
+        )
+        staff_user = User(
+            username='staff',
+            password=generate_password_hash('123'),
+            role=UserRole.STAFF,
+            name='Staff User',
+            dateOfBirth=date(1988, 3, 12),
+            gender='Female'
+        )
 
-        teacher_user_1 = User(name='Teacher 1', userAccount='teacher1', password=generate_password_hash('123'))
-        teacher_login_1 = userLogin(username='teacher1', password=generate_password_hash('123'), role=UserRole.TEACHER)
-
-        teacher_user_2 = User(name='Teacher 2', userAccount='teacher2', password=generate_password_hash('456'))
-        teacher_login_2 = userLogin(username='teacher2', password=generate_password_hash('456'), role=UserRole.TEACHER)
-
-        staff_user = User(name='Staff User', userAccount='staff', password=generate_password_hash('123'))
-        staff_login = userLogin(username='staff', password=generate_password_hash('123'), role=UserRole.STAFF)
-
-        # Thêm vào cơ sở dữ liệu
+        #   Thêm User vào cơ sở dữ liệu trước
         db.session.add(admin_user)
-        db.session.add(admin_login)
-
         db.session.add(teacher_user_1)
-        db.session.add(teacher_login_1)
-
         db.session.add(teacher_user_2)
-        db.session.add(teacher_login_2)
-
         db.session.add(staff_user)
-        db.session.add(staff_login)
+        db.session.commit()  
 
+        # Thêm PhoneNumber và Email
+        admin_phone = PhoneNumber(phoneNumber='1234567890', userID=admin_user.userID)
+        admin_email = Email(email='admin@example.com', userID=admin_user.userID)
+
+        teacher1_phone = PhoneNumber(phoneNumber='0987654321', userID=teacher_user_1.userID)
+        teacher1_email = Email(email='teacher1@example.com', userID=teacher_user_1.userID)
+
+        teacher2_phone = PhoneNumber(phoneNumber='1122334455', userID=teacher_user_2.userID)
+        teacher2_email = Email(email='teacher2@example.com', userID=teacher_user_2.userID)
+
+        staff_phone = PhoneNumber(phoneNumber='5566778899', userID=staff_user.userID)
+        staff_email = Email(email='staff@example.com', userID=staff_user.userID)
+
+        # Thêm PhoneNumber và Email vào cơ sở dữ liệu
+        db.session.add(admin_phone)
+        db.session.add(admin_email)
+
+        db.session.add(teacher1_phone)
+        db.session.add(teacher1_email)
+
+        db.session.add(teacher2_phone)
+        db.session.add(teacher2_email)
+
+        db.session.add(staff_phone)
+        db.session.add(staff_email)
+
+        # Ghi thay đổi cuối cùng vào cơ sở dữ liệu
         db.session.commit()
 
         # Thêm lớp học

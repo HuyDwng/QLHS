@@ -3,7 +3,7 @@
 {% block content %}
 <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">Quản lý học sinh</a>
+        <a class="navbar-brand" href="/admin_page">Quản lý học sinh</a>
 
         <div class="collapse navbar-collapse" id="collapsibleNavbar">
             <ul class="navbar-nav">
@@ -67,7 +67,27 @@
                     <option value="admin">Người quản trị</option>
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="dateofbirth" class="form-label">Ngày sinh</label>
+                <input type="date" class="form-control" id="dateofbirth" name="dateofbirth" required>
+            </div>
+            <div class="mb-3">
+                <label for="gender" class="form-label">Giới tính</label>
+                <select class="form-select" id="gender" name="gender" required>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="phonenumber" class="form-label">Số điện thoại</label>
+                <input type="text" class="form-control" id="phonenumber" name="phonenumber" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
             <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
         </form>
+        <h1></h1>
     </div>
 {% endblock %}

@@ -3,7 +3,9 @@ from sqlalchemy.orm import relationship
 from . import db
 from enum import Enum as PyEnum
 from flask_login import UserMixin
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
 
 # Enum cho UserRole
 class UserRole(PyEnum):
@@ -11,28 +13,20 @@ class UserRole(PyEnum):
     TEACHER = 2
     STAFF = 3
 
-# Model userLogin
-class userLogin(db.Model, UserMixin):
-    __tablename__ = 'userLogin'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(100), nullable=False, unique=True)
-    password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum(UserRole), nullable=False)  # Sử dụng Enum cho role
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)  # Kiểm tra mật khẩu
-
 # Model User
 class User(db.Model, UserMixin):
     __tablename__ = 'User'
 
     userID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(100), nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.Enum(UserRole), nullable=False)  # Sử dụng Enum cho role
     name = db.Column(db.String(255), nullable=True)
     dateOfBirth = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(10), nullable=True)
-    userAccount = db.Column(db.String(100), nullable=False, unique=True)
-    password = db.Column(db.String(255), nullable=False)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)  # Kiểm tra mật khẩu
 
 # Model PhoneNumber
 class PhoneNumber(db.Model):
@@ -72,6 +66,8 @@ class Teacher(db.Model):
 
     teacherID = db.Column(db.Integer, db.ForeignKey('User.userID'), primary_key=True)
     user = db.relationship('User', backref=db.backref('teacher', uselist=False))
+
+# Các model khác giữ nguyên
 
 # Model ClassRule
 class ClassRule(db.Model):
