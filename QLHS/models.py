@@ -101,7 +101,6 @@ class Class(db.Model):
     __tablename__ = 'Class'
 
     classID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    number = db.Column(db.Integer, nullable=False)
     grade = db.Column(db.Enum('grade10', 'grade11', 'grade12'), nullable=False)
     class_name = db.Column(db.String(255), nullable=False)
     classRuleID = db.Column(db.Integer, db.ForeignKey('ClassRule.classRuleID'), nullable=False)

@@ -13,8 +13,8 @@
                     <a class="nav-link" href="/create_class">Thêm lớp</a>
                 </li>
                 <li class="nav-item">
-                <a class="nav-link" href="/select_block">Danh sách lớp</a>
-              </li>
+                    <a class="nav-link" href="/select_block">Danh sách lớp</a>
+                </li>
             </ul>
         </div>
         <div class="d-flex">
@@ -23,64 +23,134 @@
     </div>
 </nav>
 
-    <div class="container mt-4">
-        <h1>Thêm học sinh</h1>
+<div class="container mt-4">
+    <h1>Thêm học sinh</h1>
 
-        <!-- Hiển thị thông báo flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div id="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+    <!-- Hiển thị thông báo flash -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-        <!-- Form thêm học sinh -->
-        <form method="POST" action="{{ url_for('add_student') }}">
-            {{ form.hidden_tag() }}
+    <!-- Thêm jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-            <!-- Sử dụng container và grid để chia 2 cột -->
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Họ và tên:</div>
-                    {{ form.name(class="form-control", size=40) }}
-                </div>
+    <!-- Thêm flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Ngày sinh:</div>
-                    <input type="text" name="dateOfBirth" id="dateOfBirth" class="form-control" value="{{ form.dateOfBirth.data }}">
-                </div>
+    <script>
+        // Khi trang web đã tải, áp dụng flatpickr với định dạng dd/mm/yyyy
+        document.addEventListener('DOMContentLoaded', function() {
+            flatpickr("#dateOfBirth", {
+                dateFormat: "Y-m-d",  // Định dạng chuẩn yyyy-mm-dd để gửi đi
+                altInput: true,       // Hiển thị định dạng dễ đọc dd/mm/yyyy
+                altFormat: "d/m/Y",   // Hiển thị trên input text
+                allowInput: true      // Cho phép người dùng nhập liệu trực tiếp
+            });
+        });
+    </script>
+
+    <style>
+        /* Các thông báo flash */
+        #flash-messages {
+            margin-top: 20px;
+        }
+
+        .flash-message {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-message.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .flash-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Thêm hiệu ứng fade-in cho các thông báo */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Đảm bảo không có thừa không gian trong form */
+        .form-row {
+            margin-bottom: 15px;
+        }
+    </style>
+
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div id="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form thêm học sinh -->
+    <form method="POST" action="{{ url_for('add_student') }}">
+        {{ form.hidden_tag() }}
+
+        <!-- Sử dụng container và grid để chia 2 cột -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Họ và tên:</div>
+                {{ form.name(class="form-control", size=40) }}
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Giới tính:</div>
-                    {{ form.gender(class="form-control") }}
-                </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Ngày sinh:</div>
+                <input type="text" name="dateOfBirth" id="dateOfBirth" class="form-control" value="{{ form.dateOfBirth.data }}">
+            </div>
+        </div>
 
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Địa chỉ:</div>
-                    {{ form.address(class="form-control", size=40) }}
-                </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Giới tính:</div>
+                {{ form.gender(class="form-control") }}
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Số điện thoại:</div>
-                    {{ form.phoneNumber(class="form-control", size=20) }}
-                </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Địa chỉ:</div>
+                {{ form.address(class="form-control", size=40) }}
+            </div>
+        </div>
 
-                <div class="col-md-6 mb-3">
-                    <div class="form-label">Email:</div>
-                    {{ form.email(class="form-control", size=40) }}
-                </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Số điện thoại:</div>
+                {{ form.phoneNumber(class="form-control", size=20) }}
             </div>
 
-            <div>
-                <button type="submit" class="btn btn-primary">Thêm học sinh</button>
+            <div class="col-md-6 mb-3">
+                <div class="form-label">Email:</div>
+                {{ form.email(class="form-control", size=40) }}
             </div>
-        </form>
-    </div>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">Thêm học sinh</button>
+        </div>
+    </form>
+</div>
 {% endblock %}

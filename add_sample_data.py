@@ -82,9 +82,9 @@ def add_sample_data():
         class_rule = ClassRule(maxNumber=30)
         db.session.add(class_rule)
 
-        class1 = Class(number=1, grade='grade10', class_name='Lớp 10A', classRule=class_rule)
-        class2 = Class(number=2, grade='grade11', class_name='Lớp 11A', classRule=class_rule)
-        class3 = Class(number=3, grade='grade12', class_name='Lớp 12A', classRule=class_rule)
+        class1 = Class( grade='grade10', class_name='Lớp 10A', classRule=class_rule)
+        class2 = Class( grade='grade11', class_name='Lớp 11A', classRule=class_rule)
+        class3 = Class( grade='grade12', class_name='Lớp 12A', classRule=class_rule)
         db.session.add(class1)
         db.session.add(class2)
         db.session.add(class3)
