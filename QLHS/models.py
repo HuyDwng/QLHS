@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
-from . import db
+from QLHS import db
 from enum import Enum as PyEnum
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -24,6 +24,9 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(255), nullable=True)
     dateOfBirth = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(10), nullable=True)
+
+    def get_id(self):
+        return self.userID
 
     def check_password(self, password):
         return check_password_hash(self.password, password)  # Kiểm tra mật khẩu

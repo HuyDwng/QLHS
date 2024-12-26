@@ -13,8 +13,8 @@
                     <a class="nav-link" href="/create_class">Thêm lớp</a>
                 </li>
                 <li class="nav-item">
-                <a class="nav-link" href="/select_block">Danh sách lớp</a>
-              </li>
+                    <a class="nav-link" href="/select_block">Danh sách lớp</a>
+                </li>
             </ul>
         </div>
         <div class="d-flex">
@@ -23,13 +23,23 @@
     </div>
 </nav>
 
-<div class="container mt-4">
-    <h1>Chọn khối</h1>
+<body>
+<div class="container mt-5" style="padding-left: 50px;">
+    <h3>Chọn Lớp Học Sinh</h3>
+    <form method="POST" class="mt-4">
+        <div class="form-group">
+            <label for="class">Chọn lớp:</label>
+            <select name="class" id="class" class="form-control">
+                {% for cls in classes %}
+                    <option value="{{ cls.classID }}">{{ cls.class_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <ul>
-        {% for block in blocks %}
-            <li><a href="{{ url_for('get_classes', grade=block[0]) }}">Khối {{ block[0] }}</a></li>
-        {% endfor %}
-    </ul>
+        <!-- Thêm khoảng cách giữa dropdown và button -->
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-3">Chọn</button>
+    </form>
 </div>
+
+</body>
 {% endblock %}

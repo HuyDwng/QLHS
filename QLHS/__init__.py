@@ -11,10 +11,12 @@ def create_app():
     app = Flask(__name__)
     
     # Cấu hình cơ sở dữ liệu
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:huyduong2004@localhost/qlhs'
+   # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:huyduong2004@localhost/qlhs'
+    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:%s@localhost/student_manage?charset=utf8mb4" % quote('Admin@123')
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'your_secret_key'  # Cần thiết cho session và các bảo mật khác
-    
+
     # Cấu hình email
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 465

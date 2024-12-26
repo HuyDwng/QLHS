@@ -53,7 +53,9 @@ def login():
         if user and user.check_password(password) and user.role.name == role.upper():  
             session['username'] = username
             session['role'] = role
+            login_user(user)  # Đăng nhập người dùng
 
+            print("id gv: ", user.userID)
             if role == 'admin':
                 return redirect(url_for('admin_page'))
             elif role == 'teacher':
@@ -459,7 +461,10 @@ def teacher_page():
 def enter_scores():
     # Kiểm tra quyền truy cập của giáo viên
     if current_user.is_authenticated:
-        teacher = Teacher.query.filter_by(teacherID=current_user.id).first()
+        print("Giáo viên")
+
+        teacher = Teacher.query.filter_by(teacherID=current_user.userID).first()
+        print("Giáo viên: ", current_user.userID)
         if not teacher:
             flash('Không tìm thấy giáo viên với tài khoản này!', 'danger')
             return redirect(url_for('login'))
@@ -577,7 +582,7 @@ def enter_scores():
 def export_scores():
     # Xác thực người dùng và lấy thông tin giáo viên
     if current_user.is_authenticated:
-        teacher = Teacher.query.filter_by(teacherID=current_user.id).first()
+        teacher = Teacher.query.filter_by(teacherID=current_user.userID).first()
         if not teacher:
             flash('Không tìm thấy giáo viên với tài khoản này!', 'danger')
             return redirect(url_for('login'))
@@ -822,232 +827,312 @@ def create_class():
     return render_template('create_class.html', class_rules=class_rules, grades=grades)
 
 
-@app.route('/get_classes_by_grade/<string:grade>', methods=['GET'])
-def get_classes_by_grade(grade):
-    classes = Class.query.filter_by(grade=grade).all()
-    class_list = [{'classID': class_room.classID, 'class_name': class_room.class_name} for class_room in classes]
+# @app.route('/get_classes_by_grade/<string:grade>', methods=['GET'])
+# def get_classes_by_grade(grade):
+#     classes = Class.query.filter_by(grade=grade).all()
+#     class_list = [{'classID': class_room.classID, 'class_name': class_room.class_name} for class_room in classes]
+#
+#     # In ra lớp để kiểm tra
+#     print("Classes for grade", grade, class_list)
+#
+#     return jsonify({'classes': class_list})
+#
+#
+# @app.route('/get_students_by_class/<class_id>', methods=['GET'])
+# @login_required(role='staff')
+# def get_students_by_class(class_id):
+#     students_in_class = Study.query.join(Student).filter(Study.classID == class_id).add_columns(
+#         Student.studentID, Student.name).all()
+#
+#     return jsonify(
+#         {'students': [{'studentID': student.studentID, 'name': student.name} for student in students_in_class]})
 
-    # In ra lớp để kiểm tra
-    print("Classes for grade", grade, class_list)
 
-    return jsonify({'classes': class_list})
+# @app.route('/add_student_to_class', methods=['GET', 'POST'])
+# @login_required(role='staff')
+# def add_student_to_class():
+#     # Lấy danh sách các khối
+#     grades = Class.query.with_entities(Class.grade).distinct()
+#
+#     # Lưu lại khối và lớp đã chọn
+#     selected_grade = request.form.get('grade', None)
+#     selected_class_id = request.form.get('class_id', None)
+#
+#     # Danh sách học sinh trong lớp và học sinh chưa có lớp
+#     students_in_class = []  # Học sinh thuộc lớp đã chọn
+#     students_not_in_class = []  # Học sinh chưa thuộc lớp nào
+#
+#     if request.method == 'POST':
+#         # Thêm học sinh vào lớp
+#         if 'add_student' in request.form:
+#             student_id = request.form.get('student_id', None)
+#             if not student_id:
+#                 flash('Vui lòng chọn học sinh để thêm vào lớp!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             student = Student.query.get(student_id)
+#             if not student:
+#                 flash('Học sinh không tồn tại!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             if not selected_class_id:
+#                 flash('Vui lòng chọn lớp trước khi thêm học sinh!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             class_room = Class.query.get(selected_class_id)
+#
+#             # Kiểm tra số học sinh trong lớp
+#             if len(class_room.studies) >= class_room.classRule.maxNumber:
+#                 flash(f'Lớp {class_room.class_name} đã đủ sĩ số!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             # Thêm học sinh vào lớp
+#             study = Study(studentID=student.studentID, classID=class_room.classID)
+#             db.session.add(study)
+#             db.session.commit()
+#
+#             flash(f'Học sinh {student.name} đã được thêm vào lớp {class_room.class_name}!', 'success')
+#
+#         # Xóa học sinh khỏi lớp
+#         elif 'remove_student' in request.form:
+#             student_id = request.form.get('remove_student_id', None)
+#             if not student_id:
+#                 flash('Vui lòng chọn học sinh để xóa!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             student = Student.query.get(student_id)
+#             if not student:
+#                 flash('Học sinh không tồn tại!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             # Lấy lớp học
+#             class_room = Class.query.get(selected_class_id)
+#             study = Study.query.filter_by(studentID=student.studentID, classID=class_room.classID).first()
+#             if not study:
+#                 flash(f'Học sinh {student.name} không thuộc lớp {class_room.class_name}!', 'danger')
+#                 return redirect(url_for('add_student_to_class'))
+#
+#             # Xóa học sinh khỏi lớp
+#             db.session.delete(study)
+#             db.session.commit()
+#
+#             flash(f'Học sinh {student.name} đã được xóa khỏi lớp {class_room.class_name}!', 'success')
+#
+#     # Lấy các lớp tương ứng với khối đã chọn
+#     classes = []
+#     if selected_grade:
+#         classes = Class.query.filter_by(grade=selected_grade).all()
+#
+#     # Lấy học sinh trong lớp nếu đã chọn lớp
+#     if selected_class_id:
+#         students_in_class = Study.query.join(Student).filter(Study.classID == selected_class_id).add_columns(
+#             Student.studentID, Student.name).all()
+#
+#         # Lấy học sinh chưa thuộc lớp nào
+#         students_not_in_class = Student.query.filter(
+#             Student.studentID.notin_([study.studentID for study in Study.query.filter_by(classID=selected_class_id).all()])
+#         ).all()
+#
+#     return render_template(
+#         'add_student_to_class.html',
+#         grades=grades,
+#         classes=classes,
+#         selected_grade=selected_grade,
+#         selected_class_id=selected_class_id,
+#         students_in_class=students_in_class,
+#         students_not_in_class=students_not_in_class
+#     )
+#
+#
+#
+# @app.route('/class_students', methods=['GET', 'POST'])
+# def class_students():
+#     grades = Class.query.with_entities(Class.grade).distinct()
+#     class_id = None
+#     class_name = None
+#     students_in_class = []
+#     total_students = 0
+#
+#     if request.method == 'POST':
+#         class_id = request.form.get('class_id', type=int)
+#         class_room = Class.query.get(class_id)
+#
+#         if class_room:
+#             class_name = class_room.class_name
+#             students_in_class = [study.student for study in class_room.studies]
+#             students_in_class.sort(key=lambda s: s.name.strip().split()[-1].lower())  # Sắp xếp theo tên cuối cùng
+#             total_students = len(students_in_class)
+#
+#     return render_template('class_students.html', grades=grades, class_name=class_name,
+#                            students_in_class=students_in_class, total_students=total_students)
 
-
-@app.route('/get_students_by_class/<class_id>', methods=['GET'])
-@login_required(role='staff')
-def get_students_by_class(class_id):
-    students_in_class = Study.query.join(Student).filter(Study.classID == class_id).add_columns(
-        Student.studentID, Student.name).all()
-
-    return jsonify(
-        {'students': [{'studentID': student.studentID, 'name': student.name} for student in students_in_class]})
-
-
-@app.route('/add_student_to_class', methods=['GET', 'POST'])
-@login_required(role='staff')
-def add_student_to_class():
-    students_in_class = []  # Khởi tạo danh sách học sinh trong lớp
-    selected_class_id = None
-
+@app.route('/select_block', methods=['GET', 'POST'])
+def select_block():
     if request.method == 'POST':
-        # Thêm học sinh thủ công
-        if 'add_student' in request.form:
-            student_id = request.form['student_id']
-            class_id = request.form['class_id']
+        # Lấy khối đã chọn
+        block_id = request.form.get('block')
+        return redirect(url_for('select_class', block_id=block_id))
 
-            # Tìm học sinh theo student_id
-            student = Student.query.get(student_id)
-            if not student:
-                flash('Học sinh không tồn tại!', 'danger')
-                return redirect(url_for('add_student_to_class'))
+    blocks = db.session.query(Class.grade).distinct().all()  # Lấy danh sách các khối
+    return render_template('select_block.html', blocks=blocks)
 
-            # Kiểm tra học sinh đã thuộc lớp nào chưa
-            if len(student.studies) > 0:
-                flash(f'Học sinh {student.name} đã thuộc lớp khác!', 'danger')
-                return redirect(url_for('add_student_to_class'))
+@app.route('/select_class/<block_id>', methods=['GET', 'POST'])
+def select_class(block_id):
+    if request.method == 'POST':
+        class_id = request.form.get('class')
+        return redirect(url_for('manage_students', class_id=class_id))
 
-            # Tìm lớp theo class_id
-            class_room = Class.query.get(class_id)
+    # Lấy danh sách các lớp theo khối
+    classes = Class.query.filter_by(grade=block_id).all()
+    return render_template('select_class.html', classes=classes)
 
-            # Kiểm tra sĩ số lớp
-            if len(class_room.studies) >= class_room.classRule.maxNumber:
-                flash(f'Lớp {class_room.class_name} đã đủ sĩ số!', 'danger')
-                return redirect(url_for('add_student_to_class'))
+@app.route('/remove_student_from_class/<int:class_id>/<int:student_id>', methods=['GET'])
+def remove_student_from_class(class_id, student_id):
+    # Lấy lớp theo class_id
+    class_ = Class.query.filter_by(classID=class_id).first()
 
-            # Thêm học sinh vào lớp
-            study = Study(studentID=student.studentID, classID=class_room.classID)
-            db.session.add(study)
-            db.session.commit()
+    # Lấy học sinh theo student_id
+    student = Student.query.filter_by(studentID=student_id).first()
 
-            flash(f'Học sinh {student.name} đã được thêm vào lớp {class_room.class_name}!', 'success')
+    # Kiểm tra xem học sinh có thuộc lớp này không
+    study = Study.query.filter_by(studentID=student_id, classID=class_id).first()
+    if study:
+        db.session.delete(study)
+        db.session.commit()
+        flash('Học sinh đã xóa khỏi lớp.', 'success')
 
-        # Thêm học sinh tự động
-        elif 'auto_add_students' in request.form:
-            grade = request.form['auto_grade']
-
-            # Lấy danh sách học sinh chưa có lớp
-            students_to_add = Student.query.filter(
-                Student.studentID.notin_([study.studentID for study in Study.query.all()])).all()
-
-            # Lấy lớp tương ứng với grade
-            class_room = Class.query.filter_by(grade=grade).first()
-
-            if not class_room:
-                flash('Lớp không tồn tại!', 'danger')
-                return redirect(url_for('add_student_to_class'))
-
-            # Lấy năm hiện tại
-            current_year = datetime.now().year
-
-            # Phân bổ học sinh vào lớp tự động theo tiêu chí
-            added_students = 0
-            for student in students_to_add:
-                # Tính toán độ tuổi từ dateOfBirth
-                if student.dateOfBirth:
-                    age = current_year - student.dateOfBirth.year  # Lấy năm sinh từ dateOfBirth
-                    print("tuổi: ", age)
-                else:
-                    flash(f'Học sinh {student.name} không có thông tin ngày sinh.', 'warning')
-                    continue
-
-                # Kiểm tra độ tuổi và phân bổ học sinh vào lớp
-                if age == 15 and grade == 'grade10':
-                    # Thêm học sinh vào lớp 10
-                    if len(class_room.studies) < class_room.classRule.maxNumber:
-                        study = Study(studentID=student.studentID, classID=class_room.classID)
-                        db.session.add(study)
-                        added_students += 1
-                    else:
-                        break
-                elif age == 16 and grade == 'grade11':
-                    # Thêm học sinh vào lớp 11
-                    if len(class_room.studies) < class_room.classRule.maxNumber:
-                        study = Study(studentID=student.studentID, classID=class_room.classID)
-                        db.session.add(study)
-                        added_students += 1
-                    else:
-                        break
-                elif age == 17 and grade == 'grade12':
-                    # Thêm học sinh vào lớp 12
-                    if len(class_room.studies) < class_room.classRule.maxNumber:
-                        study = Study(studentID=student.studentID, classID=class_room.classID)
-                        db.session.add(study)
-                        added_students += 1
-                    else:
-                        break
-                else:
-                    flash(f'Học sinh {student.name} tuổi không thích hợp để vào lớp {grade}.', 'warning')
-
-            db.session.commit()  # Commit tất cả các thay đổi sau khi thêm học sinh
-            if (added_students == 0):
-                flash(f'{added_students} học sinh đã được thêm vào lớp {class_room.class_name}!', 'warning')
-            else:
-                flash(f'{added_students} học sinh đã được thêm tự động vào lớp {class_room.class_name}!', 'success')
-
-        # Xóa học sinh khỏi lớp
-        elif 'remove_student' in request.form:
-            student_id = request.form['remove_student_id']
-            class_id = request.form['remove_class_id']
-
-            # Tìm học sinh theo student_id
-            student = Student.query.get(student_id)
-            if not student:
-                flash('Học sinh không tồn tại!', 'danger')
-                return redirect(url_for('add_student_to_class'))
-
-            # Tìm lớp theo class_id
-            class_room = Class.query.get(class_id)
-
-            # Kiểm tra học sinh có đang học lớp này không
-            study = Study.query.filter_by(studentID=student.studentID, classID=class_room.classID).first()
-            if not study:
-                flash(f'Học sinh {student.name} không thuộc lớp {class_room.class_name}!', 'danger')
-                return redirect(url_for('add_student_to_class'))
-
-            #students_in_class = Study.query.join(Student).filter(Study.classID == class_id).add_columns(
-             #   Student.studentID, Student.name).all()
-            # Xóa học sinh khỏi lớp
-            db.session.delete(study)
-            db.session.commit()
-
-            flash(f'Học sinh {student.name} đã được xóa khỏi lớp {class_room.class_name}!', 'success')
-
-        return redirect(url_for('add_student_to_class'))
-
-    # Lấy danh sách lớp và học sinh chưa thuộc lớp nào
-    classes = Class.query.all()
-    students = Student.query.filter(Student.studentID.notin_([study.studentID for study in Study.query.all()])).all()
-
-    # Lấy danh sách học sinh đã thuộc lớp theo khối và lớp đã chọn
-    selected_class_id = request.args.get('remove_class_id')
-    print("id lop remove: ", selected_class_id)
-    if selected_class_id:
-        students_in_class = Study.query.join(Student).filter(Study.classID == selected_class_id).add_columns(
-            Student.studentID, Student.name).all()
+        return redirect(url_for('manage_students', class_id=class_id, success="Học sinh đã được xóa khỏi lớp thành công"))
     else:
-        students_in_class = []
+        return redirect(url_for('manage_students', class_id=class_id, error="Học sinh không thuộc lớp này"))
 
-    print("lớp hs: ", students_in_class)
-    # Lấy các lớp theo khối
-    grades = [class_room.grade for class_room in classes]
-    grades = list(set(grades))  # Loại bỏ các khối trùng lặp
+@app.route('/add_student_to_class/<int:class_id>/<int:student_id>', methods=['GET'])
+def add_student_to_class(class_id, student_id):
+    # Lấy lớp theo class_id
+    class_ = Class.query.filter_by(classID=class_id).first()
 
-    return render_template('add_student_to_class.html', classes=classes, students=students,
-                           students_in_class=students_in_class, grades=grades)
+    # Lấy học sinh theo student_id
+    student = Student.query.filter_by(studentID=student_id).first()
 
+    # Kiểm tra xem học sinh đã thuộc lớp chưa
+    existing_study = Study.query.filter_by(studentID=student_id, classID=class_id).first()
+    if existing_study:
+        return redirect(url_for('manage_students', class_id=class_id, error="Học sinh đã thuộc lớp này"))
 
-# @app.route('/auto_add_students/<int:grade>/<int:class_id>', methods=['GET'])
-# def auto_add_students(grade, class_id):
-#     # Lấy tất cả học sinh chưa có lớp (study is None)
-#     students = db.session.query(Student).outerjoin(Study).filter(Study.classID.is_(None)).all()
-#
-#     # Phân loại học sinh dựa trên năm sinh và tên
-#     sorted_students = sorted(students, key=lambda x: (x.birth_year, x.name))  # Sắp xếp theo năm sinh và tên
-#
-#     # Thêm học sinh vào lớp
-#     for student in sorted_students:
-#         study = Study(studentID=student.studentID, classID=class_id)
-#         db.session.add(study)
-#     db.session.commit()
-#
-#     return jsonify({'message': 'Đã thêm học sinh tự động vào lớp thành công!'})
+    # Thêm học sinh vào lớp
+    study = Study(studentID=student.studentID, classID=class_.classID)
+    db.session.add(study)
+    db.session.commit()
+    flash('Học sinh đã được thêm vào lớp.', 'success')
+
+    return redirect(url_for('manage_students', class_id=class_id, success="Học sinh đã được thêm vào lớp thành công"))
 
 
-# @app.route('/remove_student_from_class/<int:studentID>', methods=['POST'])
-# def remove_student_from_class(studentID):
-#     # Xóa học sinh khỏi lớp
-#     study = Study.query.filter_by(studentID=studentID).first()
-#     if study:
-#         db.session.delete(study)
-#         db.session.commit()
-#         return jsonify({'message': 'Học sinh đã được xóa khỏi lớp.'})
-#     else:
-#         return jsonify({'error': 'Không tìm thấy học sinh.'}), 400
+@app.route('/manage_students/<class_id>', methods=['GET', 'POST'])
+def manage_students(class_id):
+    # Lấy thông tin lớp và quy định lớp
+    class_ = Class.query.filter_by(classID=class_id).first()
+    class_rule = ClassRule.query.filter_by(classRuleID=class_.classRuleID).first()
 
+    # Lấy danh sách học sinh chưa thuộc lớp nào
+    students_not_in_class = db.session.query(Student).outerjoin(Study).filter(Study.studentID == None).all()
 
-@app.route('/class_students', methods=['GET', 'POST'])
-def class_students():
-    grades = Class.query.with_entities(Class.grade).distinct()  # Lấy danh sách khối
-    class_id = None
-    students_in_class = []
-    total_students = 0
+    # Lấy danh sách học sinh trong lớp
+    students_in_class = db.session.query(Student).join(Study).filter(Study.classID == class_id).all()
 
+    # Kiểm tra và xử lý yêu cầu POST khi nhấn nút "Thêm tự động học sinh"
     if request.method == 'POST':
-        class_id = request.form.get('class_id', type=int)
-        class_room = Class.query.get(class_id)
+        print("POST request received.")  # In ra khi có POST request
 
-        if class_room:
-            class_name = class_room.class_name  # Lấy tên lớp
-            students_in_class = [study.student for study in class_room.studies]
-            # Sắp xếp theo tên cuối cùng
-            students_in_class = sorted(
-                students_in_class,
-                key=lambda s: s.name.strip().split()[-1].lower()  # Sắp xếp theo tên cuối cùng
-            )
-            total_students = len(students_in_class)
+        # Kiểm tra tất cả dữ liệu gửi từ form
+        print(f"Form Data: {request.form}")  # In ra toàn bộ dữ liệu từ form
 
-    return render_template('class_students.html', grades=grades, class_name=class_name,
-                           students_in_class=students_in_class, total_students=total_students)
+        # Kiểm tra xem nút 'auto_add_students' có được nhấn không
+        if 'auto_add_students' in request.form:
+            print("auto_add_students button clicked")  # In ra khi nút 'auto_add_students' được nhấn
+
+            students_to_add = db.session.query(Student).outerjoin(Study).filter(Study.studentID == None).all()
+            print(f"Number of students to add: {len(students_to_add)}")  # In ra số học sinh cần thêm
+
+            # Lấy số lượng học sinh hiện có trong lớp
+            current_students_count = len(students_in_class)
+            max_students = class_rule.maxNumber
+
+            # Biến để kiểm tra xem có học sinh nào được thêm không
+            students_added = False
+
+            for student in students_to_add:
+                today = datetime.today()
+                birthdate = student.dateOfBirth
+                age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+
+                # Debugging: In tuổi học sinh và ngày sinh
+                print(f"Student: {student.name}, Birthdate: {birthdate}, Age: {age}")
+
+                # Kiểm tra và thêm học sinh vào lớp nếu đủ điều kiện
+                if current_students_count < max_students:
+                    if age == 15 and class_.grade == 'grade10':
+                        study = Study(studentID=student.studentID, classID=class_id)
+                        db.session.add(study)
+                        current_students_count += 1
+                        students_added = True  # Đánh dấu là học sinh đã được thêm
+                    elif age == 16 and class_.grade == 'grade11':
+                        study = Study(studentID=student.studentID, classID=class_id)
+                        db.session.add(study)
+                        current_students_count += 1
+                        students_added = True  # Đánh dấu là học sinh đã được thêm
+                    elif age == 17 and class_.grade == 'grade12':
+                        study = Study(studentID=student.studentID, classID=class_id)
+                        db.session.add(study)
+                        current_students_count += 1
+                        students_added = True  # Đánh dấu là học sinh đã được thêm
+                    else:
+                        # Học sinh không phù hợp với lớp, thêm thông báo
+                        flash(f'Học sinh {student.name} không phù hợp với lớp này.', 'warning')
+                        continue
+                else:
+                    # Nếu lớp đã đủ học sinh, thêm thông báo
+                    flash('Lớp đã đủ số lượng học sinh.', 'error')
+                    return redirect(url_for('manage_students', class_id=class_id))
+
+            # Nếu không có học sinh nào được thêm, không commit và không hiển thị thông báo thành công
+            if students_added:
+                db.session.commit()
+                flash('Học sinh đã được thêm tự động vào lớp.', 'success')
+            else:
+                flash('Không có học sinh nào được thêm vào lớp vì không đủ điều kiện.', 'info')
+
+            return redirect(url_for('manage_students', class_id=class_id))
+
+    return render_template('manage_students.html',
+                           students_not_in_class=students_not_in_class,
+                           students_in_class=students_in_class,
+                           class_id=class_id)
+
+
+# @app.route('/class_students', methods=['GET', 'POST'])
+# def class_students():
+#     grades = Class.query.with_entities(Class.grade).distinct()  # Lấy danh sách khối
+#     class_id = None
+#     class_name = None
+#     students_in_class = []
+#     total_students = 0
+#
+#     if request.method == 'POST':
+#         class_id = request.form.get('class_id', type=int)
+#         class_room = Class.query.get(class_id)
+#
+#         if class_room:
+#             class_name = class_room.class_name  # Lấy tên lớp
+#             students_in_class = [study.student for study in class_room.studies]
+#             # Sắp xếp theo tên cuối cùng
+#             students_in_class = sorted(
+#                 students_in_class,
+#                 key=lambda s: s.name.strip().split()[-1].lower()  # Sắp xếp theo tên cuối cùng
+#             )
+#             total_students = len(students_in_class)
+#
+#     return render_template('class_students.html', grades=grades, class_name=class_name,
+#                            students_in_class=students_in_class, total_students=total_students)
 ###Add student end###
 
 ###Them 1 mon học và lớp cho giáo viên

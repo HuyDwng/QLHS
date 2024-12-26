@@ -1,0 +1,51 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/staff_page">Quản lý học sinh</a>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/add_student">Tiếp nhận học sinh</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/create_class">Thêm lớp</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/select_block">Danh sách lớp</a>
+                </li>
+            </ul>
+        </div>
+        <div class="d-flex">
+            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+        </div>
+    </div>
+</nav>
+
+<body>
+  <div class="container mt-5" style="padding-left: 50px;">
+    <h3>Chọn Khối Học Sinh</h3>
+    <form method="POST" class="mt-4">
+        <div class="form-group">
+            <label for="block">Chọn khối:</label>
+            <select name="block" id="block" class="form-control">
+                {% for block in blocks %}
+                    <option value="{{ block.grade }}">{{ block.grade }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Thêm khoảng cách giữa dropdown và button -->
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-3">Chọn</button>
+    </form>
+  </div>
+
+<!-- Thêm JavaScript của Bootstrap để hoạt động tốt hơn với các thành phần như modal, dropdown -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+</body>
+</html>
+{% endblock %}
