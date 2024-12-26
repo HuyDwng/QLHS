@@ -1,0 +1,229 @@
+DROP DATABASE IF EXISTS student_management;
+CREATE DATABASE student_management;
+USE student_management;
+
+-- Tạo bảng users (sử dụng một bảng cho tất cả người dùng)
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL
+);
+
+-- Bảng User (sử dụng bảng này cho thông tin chung về người dùng)
+CREATE TABLE User (
+    userID INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    dateOfBirth DATE,
+    gender VARCHAR(10),
+    phoneNumber VARCHAR(15),
+    email VARCHAR(255),
+    userAccount VARCHAR(100),
+    password VARCHAR(255)
+);
+
+-- Bảng Admin kế thừa từ User
+CREATE TABLE Admin (
+    adminID INT PRIMARY KEY,
+    FOREIGN KEY (adminID) REFERENCES User(userID)
+);
+
+-- Bảng Staff kế thừa từ User
+CREATE TABLE Staff (
+    staffID INT PRIMARY KEY,
+    FOREIGN KEY (staffID) REFERENCES User(userID)
+);
+
+-- Bảng Teacher kế thừa từ User
+CREATE TABLE Teacher (
+    teacherID INT PRIMARY KEY,
+    FOREIGN KEY (teacherID) REFERENCES User(userID)
+);
+
+-- Bảng ClassRule
+CREATE TABLE ClassRule (
+    classRuleID INT AUTO_INCREMENT PRIMARY KEY,
+    maxNumber INT
+);
+
+-- Bảng Class
+CREATE TABLE Class (
+    classID INT AUTO_INCREMENT PRIMARY KEY,
+    number INT,
+    grade ENUM('grade10', 'grade11', 'grade12'),
+    classRuleID INT,
+    class_name VARCHAR(255),
+    FOREIGN KEY (classRuleID) REFERENCES ClassRule(classRuleID)
+);
+
+-- Bảng StudentRule
+CREATE TABLE StudentRule (
+    stuRuleID INT AUTO_INCREMENT PRIMARY KEY,
+    minAge INT,
+    maxAge INT
+);
+
+-- Bảng Student
+CREATE TABLE Student (
+    studentID INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    gender VARCHAR(10),
+    dateOfBirth DATE,
+    address VARCHAR(255),
+    phoneNumber VARCHAR(15),
+    email VARCHAR(255),
+    classID INT,
+    FOREIGN KEY (classID) REFERENCES Class(classID)
+);
+
+-- Bảng Year
+CREATE TABLE Year (
+    yearID INT AUTO_INCREMENT PRIMARY KEY,
+    yearName VARCHAR(50)
+);
+
+-- Bảng Semester
+CREATE TABLE Semester (
+    semesterID INT AUTO_INCREMENT PRIMARY KEY,
+    semesterName VARCHAR(50),
+    yearID INT,
+    FOREIGN KEY (yearID) REFERENCES Year(yearID)
+);
+
+-- Bảng Subject
+CREATE TABLE Subject (
+    subjectID INT AUTO_INCREMENT PRIMARY KEY,
+    subjectName VARCHAR(255),
+    grade ENUM('grade10', 'grade11', 'grade12')
+);
+
+-- Bảng Point
+CREATE TABLE Point (
+    pointID INT AUTO_INCREMENT PRIMARY KEY,
+    subjectID INT,
+    studentID INT,
+    semesterID INT,
+    FOREIGN KEY (subjectID) REFERENCES Subject(subjectID),
+    FOREIGN KEY (studentID) REFERENCES Student(studentID),
+    FOREIGN KEY (semesterID) REFERENCES Semester(semesterID)
+);
+
+-- Bảng PointDetails
+CREATE TABLE PointDetails (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value DOUBLE,
+    pointType ENUM('ex15mins', 'ex45mins', 'finalExam'),
+    pointID INT,
+    FOREIGN KEY (pointID) REFERENCES Point(pointID)
+);
+
+-- Bảng Teach (nhiều giáo viên có thể dạy nhiều lớp)
+CREATE TABLE Teach (
+    teacherID INT,
+    classID INT,
+    PRIMARY KEY (teacherID, classID),
+    FOREIGN KEY (teacherID) REFERENCES Teacher(teacherID),
+    FOREIGN KEY (classID) REFERENCES Class(classID)
+);
+
+-- Bảng Study (nhiều học sinh có thể học nhiều lớp)
+CREATE TABLE Study (
+    studentID INT,
+    classID INT,
+    PRIMARY KEY (studentID, classID),
+    FOREIGN KEY (studentID) REFERENCES Student(studentID),
+    FOREIGN KEY (classID) REFERENCES Class(classID)
+);
+
+-- INSERT data
+-- Dữ liệu mẫu cho bảng ClassRule
+INSERT INTO ClassRule (maxNumber) VALUES (40), (35), (30);
+
+-- Dữ liệu mẫu cho bảng Class
+INSERT INTO Class (number, grade, classRuleID, class_name) VALUES
+(1, 'grade10', 1, '10A1'),
+(2, 'grade11', 2, '11A1'),
+(3, 'grade12', 3, '12A1');
+
+-- Dữ liệu mẫu cho bảng StudentRule
+INSERT INTO StudentRule (minAge, maxAge) VALUES
+(15, 20);
+
+-- Thêm Year và Semester
+INSERT INTO Year (yearName) VALUES ('2023-2024'), ('2024-2025');
+INSERT INTO Semester (semesterName, yearID) VALUES 
+('Học kỳ 1', 1), ('Học kỳ 2', 1), ('Học kỳ 1', 2), ('Học kỳ 2', 2);
+
+-- Dữ liệu mẫu cho bảng Subject
+INSERT INTO Subject (subjectName, grade) VALUES 
+('Toán', 'grade10'),
+('Ngữ Văn', 'grade11'),
+('Tiếng Anh', 'grade12');
+
+-- Dữ liệu mẫu cho bảng Student
+-- Thêm học sinh vào bảng Student
+INSERT INTO Student (name, gender, dateOfBirth, address, phoneNumber, email, classID) VALUES
+('Nguyễn Văn A', 'Male', '2008-03-15', 'Hà Nội', '0912345678', 'nva@gmail.com', 1),
+('Trần Thị B', 'Female', '2008-06-20', 'Hải Phòng', '0912345679', 'ttb@gmail.com', 1),
+('Lê Văn C', 'Male', '2007-09-10', 'Hà Nam', '0912345680', 'lvc@gmail.com', 1),
+('Phạm Văn D', 'Male', '2006-01-25', 'Hà Nội', '0912345681', 'pvd@gmail.com', 1),
+('Nguyễn Thị E', 'Female', '2008-11-10', 'Hải Dương', '0912345682', 'nte@gmail.com', 1),
+('Đặng Văn F', 'Male', '2007-04-14', 'Hưng Yên', '0912345683', 'dvf@gmail.com', 2),
+('Phan Văn G', 'Male', '2006-07-01', 'Thái Bình', '0912345684', 'pvg@gmail.com', 2),
+('Trần Thị H', 'Female', '2008-02-22', 'Hà Nội', '0912345685', 'tth@gmail.com', 3),
+('Lý Văn I', 'Male', '2007-05-13', 'Hà Nam', '0912345686', 'lvi@gmail.com', 3),
+('Phạm Thị J', 'Female', '2006-09-17', 'Hải Phòng', '0912345687', 'ptj@gmail.com', 3),
+('Nguyễn Văn K', 'Male', '2008-12-03', 'Hà Nội', '0912345688', 'nvk@gmail.com', 1),
+('Lê Văn L', 'Male', '2007-08-09', 'Hà Nam', '0912345689', 'lvl@gmail.com', 2),
+('Phạm Văn M', 'Male', '2008-06-22', 'Hải Phòng', '0912345690', 'pvm@gmail.com', 2),
+('Trần Thị N', 'Female', '2008-01-11', 'Hải Dương', '0912345691', 'ttn@gmail.com', 1),
+('Đặng Văn O', 'Male', '2007-03-18', 'Hưng Yên', '0912345692', 'dvo@gmail.com', 2),
+('Phan Văn P', 'Male', '2006-10-07', 'Thái Bình', '0912345693', 'pvp@gmail.com', 3),
+('Lý Văn Q', 'Male', '2008-05-19', 'Hà Nam', '0912345694', 'lvq@gmail.com', 3),
+('Phạm Thị R', 'Female', '2007-07-30', 'Hải Phòng', '0912345695', 'ptr@gmail.com', 3),
+('Nguyễn Văn S', 'Male', '2008-09-23', 'Hà Nội', '0912345696', 'nvs@gmail.com', 1),
+('Trần Thị T', 'Female', '2008-12-28', 'Hà Nội', '0912345697', 'ttt@gmail.com', 1);
+
+-- Dữ liệu mẫu cho bảng Point
+INSERT INTO Point (subjectID, studentID, semesterID) VALUES
+(1, 1, 1), (1, 2, 1), (1, 3, 1), (1, 4, 1), (1, 5, 1),
+(1, 6, 1), (1, 7, 1), (1, 8, 1), (1, 9, 1), (1, 10, 1), -- 10 học sinh học Toán
+(2, 11, 1), (2, 12, 1), (2, 13, 1), (2, 14, 1), (2, 15, 1), -- 5 học sinh học Văn
+(3, 16, 1), (3, 17, 1), (3, 18, 1), (3, 19, 1), (3, 20, 1); -- 5 học sinh học Anh
+
+-- Thêm chi tiết điểm cho học sinh theo môn và điểm loại
+INSERT INTO PointDetails (value, pointType, pointID) VALUES
+-- Điểm cho 10 học sinh học Toán
+(7.0, 'ex15mins', 1), (8.0, 'ex45mins', 1), (8.5, 'finalExam', 1),
+(6.5, 'ex15mins', 2), (7.5, 'ex45mins', 2), (7.0, 'finalExam', 2),
+(8.0, 'ex15mins', 3), (8.5, 'ex45mins', 3), (9.0, 'finalExam', 3),
+(7.5, 'ex15mins', 4), (8.0, 'ex45mins', 4), (7.5, 'finalExam', 4),
+(8.0, 'ex15mins', 5), (8.5, 'ex45mins', 5), (9.0, 'finalExam', 5),
+(3, 'ex15mins', 6), (4, 'ex45mins', 6), (5, 'finalExam', 6),
+(9.0, 'ex15mins', 7), (9.5, 'ex45mins', 7), (9.0, 'finalExam', 7),
+(2, 'ex15mins', 8), (3, 'ex45mins', 8), (7, 'finalExam', 8),
+(7.0, 'ex15mins', 9), (8.0, 'ex45mins', 9), (8.5, 'finalExam', 9),
+(1, 'ex15mins', 10), (9, 'ex45mins', 10), (6, 'finalExam', 10),
+
+-- Điểm cho 5 học sinh học Văn
+(6.0, 'ex15mins', 11), (7.0, 'ex45mins', 11), (8.0, 'finalExam', 11),
+(5.5, 'ex15mins', 12), (6.5, 'ex45mins', 12), (7.5, 'finalExam', 12),
+(7.0, 'ex15mins', 13), (8.0, 'ex45mins', 13), (8.5, 'finalExam', 13),
+(6.0, 'ex15mins', 14), (6.5, 'ex45mins', 14), (7.0, 'finalExam', 14),
+(8.0, 'ex15mins', 15), (8.5, 'ex45mins', 15), (9.0, 'finalExam', 15),
+
+-- Điểm cho 5 học sinh học Anh
+(7.5, 'ex15mins', 16), (8.0, 'ex45mins', 16), (8.5, 'finalExam', 16),
+(6.5, 'ex15mins', 17), (7.5, 'ex45mins', 17), (8.0, 'finalExam', 17),
+(8.0, 'ex15mins', 18), (8.5, 'ex45mins', 18), (9.0, 'finalExam', 18),
+(7.0, 'ex15mins', 19), (7.5, 'ex45mins', 19), (8.0, 'finalExam', 19),
+(8.5, 'ex15mins', 20), (9.0, 'ex45mins', 20), (9.5, 'finalExam', 20);
+
+
+-- Thêm học sinh vào các lớp còn thiếu trong bảng Study
+-- Thêm dữ liệu cho bảng Study
+INSERT INTO Study (studentID, classID) VALUES
+(1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
+(6, 2), (7, 2), (8, 3), (9, 3), (10, 3),
+(11, 1), (12, 2), (13, 2), (14, 1), (15, 2),
+(16, 3), (17, 3), (18, 3), (19, 1), (20, 1);

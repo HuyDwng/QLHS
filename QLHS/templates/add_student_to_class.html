@@ -1,0 +1,173 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Học Sinh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+<div class="container mt-5">
+    <h1>Quản Lý Học Sinh Trong Lớp</h1>
+
+    <!-- Hiển thị thông báo -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-messages">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Form Thêm Học Sinh Vào Lớp -->
+    <h2>Thêm Học Sinh Vào Lớp</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <select class="form-control" id="grade" name="grade" required>
+                <option value="">Chọn Khối</option>
+                {% for grade in grades %}
+                <option value="{{ grade }}">{{ grade }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="class_id" name="class_id" required>
+                <option value="">Chọn lớp theo khối</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="student_id" name="student_id" required>
+                {% for student in students %}
+                <option value="{{ student.studentID }}">{{ student.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" id="add_student_btn" class="btn btn-primary" name="add_student">Thêm Học Sinh</button>
+    </form>
+
+    <hr>
+
+    <!-- Thêm học sinh tự động -->
+    <h2>Thêm Học Sinh Tự Động</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <select class="form-control" id="auto_grade" name="auto_grade" required>
+                <option value="">Chọn Khối</option>
+                {% for grade in grades %}
+                <option value="{{ grade }}">{{ grade }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="auto_class_id" name="auto_class_id" required>
+                <option value="">Chọn lớp theo khối</option>
+            </select>
+        </div>
+        <button type="submit" name="auto_add_students" class="btn btn-success">Thêm Tự Động</button>
+    </form>
+
+    <hr>
+
+    <!-- Xóa học sinh khỏi lớp -->
+    <h2>Xóa Học Sinh Khỏi Lớp</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <select class="form-control" id="remove_grade" name="remove_grade" required>
+                <option value="">Chọn khối</option>
+                {% for grade in grades %}
+                <option value="{{ grade }}">{{ grade }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="remove_class_id" name="remove_class_id" required>
+                <option value="">Chọn lớp theo khối</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="remove_student_id" name="remove_student_id" required>
+                {% for student in students_in_class %}
+                <option value="{{ student.studentID }}">{{ student.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" name="remove_student" class="btn btn-danger">Xóa Học Sinh</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Khi chọn khối, gọi API lấy danh sách lớp theo khối
+    $('#grade, #auto_grade, #remove_grade').on('change', function() {
+        var grade = $(this).val();
+        var targetSelect;
+
+        // Xác định select box cần cập nhật
+        if ($(this).attr('id') === 'auto_grade') {
+            targetSelect = '#auto_class_id';
+        } else if ($(this).attr('id') === 'remove_grade') {
+            targetSelect = '#remove_class_id';
+        } else {
+            targetSelect = '#class_id';
+        }
+
+        if (grade) {
+            $.ajax({
+                url: '/get_classes_by_grade/' + grade,
+                method: 'GET',
+                success: function(response) {
+                    var classes = response.classes;
+                    var classSelect = $(targetSelect);
+                    classSelect.empty();
+                    classSelect.append('<option value="">Chọn lớp theo khối</option>');
+                    $.each(classes, function(index, class_room) {
+                        classSelect.append('<option value="' + class_room.classID + '">' + class_room.class_name + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log('Lỗi API:', error);
+                    alert('Có lỗi khi lấy dữ liệu lớp');
+                }
+            });
+        } else {
+            $(targetSelect).empty();
+            $(targetSelect).append('<option value="">Chọn lớp theo khối</option>');
+        }
+    });
+
+    // Khi chọn lớp để xóa học sinh, gọi API lấy danh sách học sinh trong lớp
+    $('#remove_class_id').on('change', function() {
+        var classId = $(this).val();
+        if (classId) {
+            $.ajax({
+                url: '/get_students_by_class/' + classId,
+                method: 'GET',
+                success: function(response) {
+                    var students = response.students;
+                    var studentSelect = $('#remove_student_id');
+                    studentSelect.empty();
+                    studentSelect.append('<option value="">Chọn học sinh</option>');
+                    $.each(students, function(index, student) {
+                        studentSelect.append('<option value="' + student.studentID + '">' + student.name + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log('Lỗi API:', error);
+                    alert('Có lỗi khi lấy dữ liệu học sinh');
+                }
+            });
+        } else {
+            $('#remove_student_id').empty();
+            $('#remove_student_id').append('<option value="">Chọn học sinh</option>');
+        }
+    });
+</script>
+
+</body>
+</html>

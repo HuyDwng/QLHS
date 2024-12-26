@@ -1,0 +1,77 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Cập Nhật Môn Học</h1>
+    <div class="mb-3">
+        <a href="{{ url_for('manage') }}" class="btn btn-secondary">Quay lại</a>
+    </div>
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mt-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form tìm kiếm -->
+    <form method="GET" action="/update_subject">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Tìm kiếm môn học..." name="query" value="{{ query or '' }}">
+            <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        </div>
+    </form>
+
+    <!-- Hiển thị danh sách môn học -->
+    {% if subjects %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên môn học</th>
+                    <th>Khối</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in subjects %}
+                <tr>
+                    <td>{{ subject.subjectID }}</td>
+                    <td>{{ subject.subjectName }}</td>
+                    <td>
+                        {% if subject.grade == 'grade10' %} Khối 10
+                        {% elif subject.grade == 'grade11' %} Khối 11
+                        {% elif subject.grade == 'grade12' %} Khối 12
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Form cập nhật môn học -->
+                        <form method="POST" action="/update_subject">
+                            <input type="hidden" name="subject_id" value="{{ subject.subjectID }}">
+                            <div class="mb-2">
+                                <input type="text" class="form-control" name="subject_name" placeholder="Tên mới" value="{{ subject.subjectName }}" required>
+                            </div>
+                            <div class="mb-2">
+                                <select class="form-select" name="grade" required>
+                                    <option value="grade10" {% if subject.grade == 'grade10' %}selected{% endif %}>Khối 10</option>
+                                    <option value="grade11" {% if subject.grade == 'grade11' %}selected{% endif %}>Khối 11</option>
+                                    <option value="grade12" {% if subject.grade == 'grade12' %}selected{% endif %}>Khối 12</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Cập nhật</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center mt-4">Không tìm thấy môn học nào.</p>
+    {% endif %}
+</div>
+{% endblock %}

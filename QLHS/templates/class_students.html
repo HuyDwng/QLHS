@@ -1,0 +1,96 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Học Sinh Trong Lớp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+<div class="container mt-5">
+    <h1>Quản Lý Học Sinh Trong Lớp</h1>
+
+    <form method="POST">
+        <div class="mb-3">
+            <select class="form-control" id="grade" name="grade" required>
+                <option value="">Chọn khối</option>
+                {% for grade in grades %}
+                <option value="{{ grade.grade }}">{{ grade.grade }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <select class="form-control" id="class_id" name="class_id" required>
+                <option value="">Chọn lớp</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Xem Học Sinh</button>
+    </form>
+
+    <hr>
+
+    {% if students_in_class %}
+    <h2>
+        Danh Sách Học Sinh {{ class_name }}
+        <span style="font-size: 1rem; margin-left: 10px;">(Sĩ số: {{ total_students }})</span>
+    </h2>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th style="width: 80px; border-right: 2px solid black;">Số TT</th>  <!-- Cột số thứ tự -->
+            <th>Tên Học Sinh</th>
+            <th>Giới Tính</th>
+            <th>Ngày Sinh</th>
+            <th>Địa Chỉ</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for student in students_in_class %}
+        <tr>
+            <td style="border-right: 2px solid black;">{{ loop.index }}</td>  <!-- Đường kẻ đậm cho ô số thứ tự -->
+            <td>{{ student.name }}</td>
+            <td>{{ student.gender }}</td>
+            <td>{{ student.dateOfBirth.strftime('%d-%m-%Y') if student.dateOfBirth else 'N/A' }}</td>
+            <td>{{ student.address }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Chưa có học sinh nào trong lớp này.</p>
+    {% endif %}
+</div>
+
+<script>
+    $('#grade').on('change', function() {
+        var grade = $(this).val();
+        if (grade) {
+            $.ajax({
+                url: '/get_classes_by_grade/' + grade,
+                method: 'GET',
+                success: function(response) {
+                    var classes = response.classes;
+                    var classSelect = $('#class_id');
+                    classSelect.empty();
+                    classSelect.append('<option value="">Chọn lớp theo khối</option>');
+                    $.each(classes, function(index, class_room) {
+                        classSelect.append('<option value="' + class_room.classID + '">' + class_room.class_name + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log('Lỗi API:', error);
+                    alert('Có lỗi khi lấy dữ liệu lớp');
+                }
+            });
+        } else {
+            $('#class_id').empty();
+            $('#class_id').append('<option value="">Chọn lớp theo khối</option>');
+        }
+    });
+</script>
+
+</body>
+</html>

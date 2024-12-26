@@ -1,0 +1,64 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Xóa Môn Học</h1>
+
+    <!-- Nút quay lại -->
+    <div class="mb-3">
+        <a href="{{ url_for('manage') }}" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mt-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form tìm kiếm môn học -->
+    <form method="GET" action="{{ url_for('delete_subject') }}">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Tìm kiếm môn học..." name="query" value="{{ query or '' }}">
+            <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        </div>
+    </form>
+
+    <!-- Hiển thị danh sách môn học -->
+    {% if subjects %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tên môn học</th>
+                    <th>Khối lớp</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in subjects %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ subject.subjectName }}</td>
+                    <td>
+                        {% if subject.grade == 'grade10' %}Khối 10{% elif subject.grade == 'grade11' %}Khối 11{% elif subject.grade == 'grade12' %}Khối 12{% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_subject') }}">
+                            <input type="hidden" name="subject_id" value="{{ subject.subjectID }}">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa môn học này không?');">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center">Không tìm thấy môn học nào.</p>
+    {% endif %}
+</div>
+{% endblock %}

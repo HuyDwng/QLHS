@@ -1,0 +1,40 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mt-1">Thêm Môn Học</h1>
+
+    <!-- Hiển thị thông báo flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mt-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/add_subject">
+        <div class="mb-3">
+            <label for="subject_name" class="form-label">Tên môn học:</label>
+            <input type="text" class="form-control" name="subject_name" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="grade" class="form-label">Khối lớp:</label>
+            <select class="form-select" name="grade" required>
+                <option value="" disabled selected>Chọn khối lớp</option>
+                <option value="grade10">Khối 10</option>
+                <option value="grade11">Khối 11</option>
+                <option value="grade12">Khối 12</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Thêm môn học</button>
+        <a href="/manage" class="btn btn-secondary">Quay lại</a>
+    </form>
+</div>
+{% endblock %}

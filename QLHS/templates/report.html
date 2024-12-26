@@ -1,0 +1,149 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Quản lý học sinh</a>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/manage">Quản lý môn học</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rule">Thay đổi quy định</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/report">Thống kê và báo cáo</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register">Tạo tài khoản</a>
+                </li>
+            </ul>
+        </div>
+        <div class="d-flex">
+            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2 class="text-center">Báo cáo tổng kết môn học</h2>
+    <form action="/report" method="POST" class="mt-4">
+        <div class="mb-3">
+            <label for="subject" class="form-label">Môn học</label>
+            <select class="form-select" id="subject" name="subject" required>
+                {% for subject in subjects %}
+                    <option value="{{ subject[0] }}" {% if subject[0] == subject_id %}selected{% endif %}>
+                        {{ subject[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="year" class="form-label">Năm học</label>
+            <select class="form-select" id="year" name="year" required>
+                {% for year in years %}
+                    <option value="{{ year[0] }}" {% if year[0] == year_id %}selected{% endif %}>
+                        {{ year[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="semester" class="form-label">Học kỳ</label>
+            <select class="form-select" id="semester" name="semester" required>
+                <option value="1" {% if semester_id == 1 %}selected{% endif %}>Học kỳ 1</option>
+                <option value="2" {% if semester_id == 2 %}selected{% endif %}>Học kỳ 2</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-check-label" for="showChart">
+                <input class="form-check-input" type="checkbox" id="showChart" name="showChart" value="1">
+                Hiển thị biểu đồ
+            </label>
+        </div>        
+        <button type="submit" class="btn btn-primary w-100">Xem báo cáo</button>
+    </form>
+
+    <div class="mt-5">
+    {% if report_data %}
+        <h4>Kết quả báo cáo:</h4>
+        {% if subject_name and year_name and semester_name %}
+            <p><strong>Môn học:</strong> {{ subject_name }}</p>
+            <p><strong>Năm học:</strong> {{ year_name }}</p>
+            <p><strong>Học kỳ:</strong> {{ semester_name }}</p>
+        {% else %}
+            <p>Chưa có dữ liệu môn học hoặc năm học.</p>
+        {% endif %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Lớp</th>
+                        <th>Sĩ số</th>
+                        <th>Số lượng đạt</th>
+                        <th>Tỷ lệ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in report_data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ row.class_name }}</td>
+                        <td>{{ row.total_students }}</td>
+                        <td>{{ row.pass_students }}</td>
+                        <td>{{ row.pass_rate }}%</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if show_chart %}
+        <div class="mt-5">
+            <h4>Biểu đồ tỷ lệ đạt</h4>
+            <canvas id="reportChart"></canvas>
+        </div>
+        <script>
+            var ctx = document.getElementById('reportChart').getContext('2d');
+            var reportChart = new Chart(ctx, {
+                type: 'bar',     // Loại biểu đồ
+                data: {
+                    labels: [{% for row in report_data %}'{{ row.class_name }}',{% endfor %}],
+                    datasets: [{
+                        label: 'Tỷ lệ đạt (%)',
+                        data: [{% for row in report_data %}{{ row.pass_rate }},{% endfor %}],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return tooltipItem.raw + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100, 
+                        }
+                    }
+                }
+            });
+        </script>
+        {% endif %}
+    {% endif %}
+    </div>    
+</div>
+{% endblock %}
