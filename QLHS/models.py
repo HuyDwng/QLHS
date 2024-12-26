@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from . import db
 from enum import Enum as PyEnum
@@ -33,18 +33,36 @@ class PhoneNumber(db.Model):
     __tablename__ = 'PhoneNumber'
 
     phoneID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    userID = db.Column(db.Integer, db.ForeignKey('User.userID'), nullable=False)
+    userID = db.Column(db.Integer, db.ForeignKey('User.userID'), nullable=True)
     phoneNumber = db.Column(db.String(15), unique=True, nullable=False)
+    studentID = db.Column(db.Integer, db.ForeignKey('Student.studentID'), nullable=True)
+
     user = db.relationship('User', backref=db.backref('phone_numbers', lazy=True))
+    student = db.relationship('Student', backref='student_phone_numbers_backref', lazy=True)
+
+    # Ràng buộc UNIQUE: Một số điện thoại chỉ có thể thuộc về một User hoặc một Student
+    __table_args__ = (
+        UniqueConstraint('phoneNumber', 'userID', name='_user_phone_uc'),  # Đảm bảo phoneNumber chỉ gán cho 1 user
+        UniqueConstraint('phoneNumber', 'studentID', name='_student_phone_uc'),
+    )
 
 # Model Email
 class Email(db.Model):
     __tablename__ = 'Email'
 
     emailID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    userID = db.Column(db.Integer, db.ForeignKey('User.userID'), nullable=False)
+    userID = db.Column(db.Integer, db.ForeignKey('User.userID'), nullable=True)
+    studentID = db.Column(db.Integer, db.ForeignKey('Student.studentID'), nullable=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
+
     user = db.relationship('User', backref=db.backref('emails', lazy=True))
+    student = db.relationship('Student', backref='student_emails_backref', lazy=True)
+
+    # Ràng buộc UNIQUE: Một email chỉ có thể thuộc về một User hoặc một Student
+    __table_args__ = (
+        UniqueConstraint('email', 'userID', name='_user_email_uc'),  # Đảm bảo email chỉ gán cho 1 user
+        UniqueConstraint('email', 'studentID', name='_student_email_uc'),  # Đảm bảo email chỉ gán cho 1 student
+    )
 
 # Model Admin (Kế thừa từ User)
 class Admin(db.Model):
@@ -65,9 +83,8 @@ class Teacher(db.Model):
     __tablename__ = 'Teacher'
 
     teacherID = db.Column(db.Integer, db.ForeignKey('User.userID'), primary_key=True)
+    subjectID = db.Column(db.Integer, db.ForeignKey('Subject.subjectID'), nullable=False)
     user = db.relationship('User', backref=db.backref('teacher', uselist=False))
-
-# Các model khác giữ nguyên
 
 # Model ClassRule
 class ClassRule(db.Model):
@@ -104,8 +121,6 @@ class Student(db.Model):
     gender = db.Column(db.String(10), nullable=True)
     dateOfBirth = db.Column(db.Date, nullable=True)
     address = db.Column(db.String(255), nullable=True)
-    classID = db.Column(db.Integer, db.ForeignKey('Class.classID'), nullable=False)
-    class_ = db.relationship('Class', backref=db.backref('students', lazy=True))
 
 # Model Year
 class Year(db.Model):
@@ -130,6 +145,9 @@ class Subject(db.Model):
     subjectID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     subjectName = db.Column(db.String(255), nullable=False)
     grade = db.Column(db.Enum('grade10', 'grade11', 'grade12'), nullable=False)
+    # Mối quan hệ với giáo viên
+    # classes = db.relationship('Class', secondary='Teach', back_populates='subjects')
+    teaches = db.relationship('Teach', back_populates='subject')
 
 # Model PointType
 class PointType(db.Model):
@@ -157,12 +175,15 @@ class Point(db.Model):
 # Model Teach (Nhiều giáo viên có thể dạy nhiều lớp)
 class Teach(db.Model):
     __tablename__ = 'Teach'
+    teachID = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
     teacherID = db.Column(db.Integer, db.ForeignKey('Teacher.teacherID'), primary_key=True)
     classID = db.Column(db.Integer, db.ForeignKey('Class.classID'), primary_key=True)
+    subjectID = db.Column(db.Integer, db.ForeignKey('Subject.subjectID'), nullable=False)
 
     teacher = db.relationship('Teacher', backref=db.backref('teaches', lazy=True))
     class_ = db.relationship('Class', backref=db.backref('teaches', lazy=True))
+    subject = db.relationship('Subject', back_populates='teaches')
 
 # Model Study (Nhiều học sinh có thể học nhiều lớp)
 class Study(db.Model):
@@ -170,6 +191,8 @@ class Study(db.Model):
 
     studentID = db.Column(db.Integer, db.ForeignKey('Student.studentID'), primary_key=True)
     classID = db.Column(db.Integer, db.ForeignKey('Class.classID'), primary_key=True)
+    # yearID = db.Column(db.Integer, db.ForeignKey('Year.yearID'), nullable=False)
 
     student = db.relationship('Student', backref=db.backref('studies', lazy=True))
     class_ = db.relationship('Class', backref=db.backref('studies', lazy=True))
+    # year = db.relationship('Year', backref=db.backref('semesters_re', lazy=True))

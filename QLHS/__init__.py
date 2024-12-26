@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
+from flask_login import LoginManager
+from urllib.parse import quote
 
 db = SQLAlchemy()
 mail = Mail()
@@ -25,9 +27,19 @@ def create_app():
     db.init_app(app)
     mail.init_app(app)
 
+    # Khởi tạo LoginManager
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = "login"
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return userLogin.query.get(int(user_id)) #sua cai nay cai
+        ###Enter_scores start###
+
     # Import models để tạo bảng trong cơ sở dữ liệu
     with app.app_context():
-        from .models import User, PhoneNumber, Email, Admin, Staff, Teacher, ClassRule, Class, StudentRule, Student, Year, Semester, Subject, PointType, Point, Teach, Study
+        from .models import userLogin, User, PhoneNumber, Email, Admin, Staff, Teacher, ClassRule, Class, StudentRule, Student, Year, Semester, Subject, PointType, Point, Teach, Study
         db.create_all()
 
     return app

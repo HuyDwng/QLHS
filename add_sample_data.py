@@ -82,9 +82,9 @@ def add_sample_data():
         class_rule = ClassRule(maxNumber=30)
         db.session.add(class_rule)
 
-        class1 = Class(number=1, grade='grade10', class_name='Class 10A', classRule=class_rule)
-        class2 = Class(number=2, grade='grade11', class_name='Class 11A', classRule=class_rule)
-        class3 = Class(number=3, grade='grade12', class_name='Class 12A', classRule=class_rule)
+        class1 = Class(number=1, grade='grade10', class_name='Lớp 10A', classRule=class_rule)
+        class2 = Class(number=2, grade='grade11', class_name='Lớp 11A', classRule=class_rule)
+        class3 = Class(number=3, grade='grade12', class_name='Lớp 12A', classRule=class_rule)
         db.session.add(class1)
         db.session.add(class2)
         db.session.add(class3)
@@ -193,13 +193,46 @@ def add_sample_data():
         # Lưu thay đổi vào cơ sở dữ liệu    
         db.session.commit()
 
-        # Thêm quan hệ học
         # Thêm dữ liệu vào bảng study
         for student in students:
-            study = Study(studentID=student.studentID, classID=student.classID)
+            study = Study(studentID=student.studentID, classID= round(random.uniform(1, 3), 2))
+
             db.session.add(study)
 
         db.session.commit()
+        # Lưu vào bảng User
+
+
+        # Tạo đối tượng Teacher liên kết với User
+        teacher1_teacher = Teacher(teacherID=teacher_user_1.userID, subjectID=1)  # Liên kết với user ID
+        teacher2_teacher = Teacher(teacherID=teacher_user_2.userID, subjectID=2)
+
+        # Thêm vào bảng Teacher
+        db.session.add(teacher1_teacher)
+        db.session.add(teacher2_teacher)
+        db.session.commit()
+
+        # Giả sử bạn đã có giáo viên với ID = 1 và môn học với ID = 1
+        teacher_id = teacher1_teacher.teacherID
+        subject_id = teacher1_teacher.subjectID
+
+        # Giả sử bạn có các lớp học với các classID
+        class_ids = [1, 2]  # Ví dụ giáo viên dạy lớp 1 và lớp 2
+
+        # Lặp qua danh sách các lớp để thêm dữ liệu liên kết
+        for class_id in class_ids:
+            # Tạo đối tượng Teach mới
+            teach = Teach(teacherID=teacher_id, classID=class_id, subjectID=subject_id)
+            db.session.add(teach)
+
+            # Thêm đối tượng Teach vào cơ sở dữ liệu
+
+        teach = Teach(teacherID=3, classID=3, subjectID=2)
+        db.session.add(teach)
+
+        # Commit để lưu các thay đổi vào cơ sở dữ liệu
+        db.session.commit()
+
         print("Dữ liệu đã được thêm thành công!!!")
 
 if __name__ == '__main__':

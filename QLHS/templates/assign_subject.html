@@ -1,0 +1,24 @@
+<form method="POST">
+    <label for="teacher_id">Chọn giáo viên:</label>
+    <select name="teacher_id" id="teacher_id">
+        {% for teacher in teachers %}
+            <option value="{{ teacher.teacherID }}">{{ teacher.user.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="subject_name">Chọn môn học:</label>
+    <select name="subject_name" id="subject_name">
+        {% for subject in subjects %}
+            <option value="{{ subject.subjectName }}">{{ subject.subjectName }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="class_name">Chọn lớp học:</label>
+    <select name="class_name" id="class_name">
+        {% for class_ in classes %}
+            <option value="{{ class_.class_name }}">{{ class_.class_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Gán môn học</button>
+</form>
