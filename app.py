@@ -165,7 +165,7 @@ def report():
             report_data = []
             for cls in classes:
                 # Get students in the class
-                students = Student.query.filter(Student.classID == cls.classID).all()
+                students = Student.query.join(Study).filter(Study.classID == cls.classID).all()
                 total_students = len(students)
 
                 # Calculate the number of students who passed
@@ -452,9 +452,7 @@ def search_subject():
 @login_required(role='teacher')
 def teacher_page():
     return render_template('teacher.html')
-
-    ###Teacher end###
-
+### Nhập điểm start ###
 @app.route('/enter_scores', methods=['GET', 'POST'])
 @login_required(role='teacher')
 def enter_scores():
@@ -570,10 +568,9 @@ def enter_scores():
                            selected_class=selected_class,
                            points_columns=points_columns,
                            student_points=student_points)
+### Nhập điểm end ###
 
-
-
-
+### Xuất điểm start ###
 @app.route('/export_scores', methods=['GET', 'POST'])
 @login_required(role='teacher')
 def export_scores():
@@ -674,11 +671,18 @@ def export_scores():
                            semesters=semesters,
                            year=year,
                            selected_class=selected_class)
+### Xuất điểm end ###
+
+###Teacher end###
 
 
-###Enter_scores end###
+###Staff start###
+@app.route('/staff_page')
+@login_required(role='staff')
+def staff_page():
+    return render_template('staff.html')
 
-###Add student start###
+### Tiếp nhận học sinh start###
 @app.route('/add_student', methods=['GET', 'POST'])
 @login_required(role='staff')
 def add_student():
@@ -768,8 +772,9 @@ def add_student():
                 flash(f"{getattr(form, fieldName).label.text} Không Hợp Lệ: {errMsg}", 'danger')
 
     return render_template('add_student.html', form=form)
+### Tiếp nhận học sinh end###
 
-
+### Thêm lớp start###
 @app.route('/create_class', methods=['GET', 'POST'])
 @login_required(role='staff')
 def create_class():
@@ -1070,15 +1075,6 @@ def class_students():
 #
 #     flash("Môn học đã được gán cho giáo viên và lớp học thành công.", "success")
 #     return redirect(url_for('assign_subject'))
-# ###End
-
-###Staff start###
-@app.route('/staff_page')
-@login_required(role='staff')
-def staff_page():
-    return render_template('staff.html')
-
-
 ###Staff end###
 
 if __name__ == '__main__':

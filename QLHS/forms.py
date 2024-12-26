@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length, Email, Regexp  # Import Email từ wtforms.validators
+from wtforms.validators import DataRequired, Length, Email, Regexp  
 import datetime
 
 class StudentForm(FlaskForm):

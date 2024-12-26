@@ -93,26 +93,26 @@ def add_sample_data():
 
         # Tạo danh sách học sinh
         students = [
-            Student(name='Nguyễn Văn A', gender='Male', dateOfBirth='2008-03-15', address='Hà Nội', classID=1),
-            Student(name='Trần Thị B', gender='Female', dateOfBirth='2008-06-20', address='Hải Phòng', classID=1),
-            Student(name='Lê Văn C', gender='Male', dateOfBirth='2007-09-10', address='Hà Nam', classID=1),
-            Student(name='Phạm Văn D', gender='Male', dateOfBirth='2006-01-25', address='Hà Nội', classID=1),
-            Student(name='Nguyễn Thị E', gender='Female', dateOfBirth='2008-11-10', address='Hải Dương', classID=1),
-            Student(name='Đặng Văn F', gender='Male', dateOfBirth='2007-04-14', address='Hưng Yên', classID=2),
-            Student(name='Phan Văn G', gender='Male', dateOfBirth='2006-07-01', address='Thái Bình', classID=2),
-            Student(name='Trần Thị H', gender='Female', dateOfBirth='2008-02-22', address='Hà Nội', classID=3),
-            Student(name='Lý Văn I', gender='Male', dateOfBirth='2007-05-13', address='Hà Nam', classID=3),
-            Student(name='Phạm Thị J', gender='Female', dateOfBirth='2006-09-17', address='Hải Phòng', classID=3),
-            Student(name='Nguyễn Văn K', gender='Male', dateOfBirth='2008-12-03', address='Hà Nội', classID=1),
-            Student(name='Lê Văn L', gender='Male', dateOfBirth='2007-08-09', address='Hà Nam', classID=2),
-            Student(name='Phạm Văn M', gender='Male', dateOfBirth='2008-06-22', address='Hải Phòng', classID=2),
-            Student(name='Trần Thị N', gender='Female', dateOfBirth='2008-01-11', address='Hải Dương', classID=1),
-            Student(name='Đặng Văn O', gender='Male', dateOfBirth='2007-03-18', address='Hưng Yên', classID=2),
-            Student(name='Phan Văn P', gender='Male', dateOfBirth='2006-10-07', address='Thái Bình', classID=3),
-            Student(name='Lý Văn Q', gender='Male', dateOfBirth='2008-05-19', address='Hà Nam', classID=3),
-            Student(name='Phạm Thị R', gender='Female', dateOfBirth='2007-07-30', address='Hải Phòng ', classID=3),
-            Student(name='Nguyễn Văn S', gender='Male', dateOfBirth='2008-09-23', address='Hà Nội', classID=1),
-            Student(name='Trần Thị T', gender='Female', dateOfBirth='2008-12-28', address='Hà Nội', classID=1)
+            Student(name='Nguyễn Văn A', gender='Male', dateOfBirth='2008-03-15', address='Hà Nội'),
+            Student(name='Trần Thị B', gender='Female', dateOfBirth='2008-06-20', address='Hải Phòng'),
+            Student(name='Lê Văn C', gender='Male', dateOfBirth='2007-09-10', address='Hà Nam'),
+            Student(name='Phạm Văn D', gender='Male', dateOfBirth='2006-01-25', address='Hà Nội'),
+            Student(name='Nguyễn Thị E', gender='Female', dateOfBirth='2008-11-10', address='Hải Dương'),
+            Student(name='Đặng Văn F', gender='Male', dateOfBirth='2007-04-14', address='Hưng Yên'),
+            Student(name='Phan Văn G', gender='Male', dateOfBirth='2006-07-01', address='Thái Bình'),
+            Student(name='Trần Thị H', gender='Female', dateOfBirth='2008-02-22', address='Hà Nội'),
+            Student(name='Lý Văn I', gender='Male', dateOfBirth='2007-05-13', address='Hà Nam'),
+            Student(name='Phạm Thị J', gender='Female', dateOfBirth='2006-09-17', address='Hải Phòng'),
+            Student(name='Nguyễn Văn K', gender='Male', dateOfBirth='2008-12-03', address='Hà Nội'),
+            Student(name='Lê Văn L', gender='Male', dateOfBirth='2007-08-09', address='Hà Nam'),
+            Student(name='Phạm Văn M', gender='Male', dateOfBirth='2008-06-22', address='Hải Phòng'),
+            Student(name='Trần Thị N', gender='Female', dateOfBirth='2008-01-11', address='Hải Dương'),
+            Student(name='Đặng Văn O', gender='Male', dateOfBirth='2007-03-18', address='Hưng Yên'),
+            Student(name='Phan Văn P', gender='Male', dateOfBirth='2006-10-07', address='Thái Bình'),
+            Student(name='Lý Văn Q', gender='Male', dateOfBirth='2008-05-19', address='Hà Nam'),
+            Student(name='Phạm Thị R', gender='Female', dateOfBirth='2007-07-30', address='Hải Phòng '),
+            Student(name='Nguyễn Văn S', gender='Male', dateOfBirth='2008-09-23', address='Hà Nội'),
+            Student(name='Trần Thị T', gender='Female', dateOfBirth='2008-12-28', address='Hà Nội')
         ]
 
         # Thêm từng học sinh vào phiên làm việc
@@ -131,10 +131,10 @@ def add_sample_data():
         db.session.commit()
 
         # Thêm học kỳ
-        semester1 = Semester(semesterName='Semester 1', year=year1)
-        semester2 = Semester(semesterName='Semester 2', year=year1)
-        semester3 = Semester(semesterName='Semester 1', year=year2)
-        semester4 = Semester(semesterName='Semester 2', year=year2)
+        semester1 = Semester(semesterName='Học kỳ 1', year=year1)
+        semester2 = Semester(semesterName='Học kỳ 2', year=year1)
+        semester3 = Semester(semesterName='Học kỳ 1', year=year2)
+        semester4 = Semester(semesterName='Học kỳ 2', year=year2)
         db.session.add(semester1)
         db.session.add(semester2)
         db.session.add(semester3)
