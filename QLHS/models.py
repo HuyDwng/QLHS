@@ -123,6 +123,8 @@ class Student(db.Model):
     gender = db.Column(db.String(10), nullable=True)
     dateOfBirth = db.Column(db.Date, nullable=True)
     address = db.Column(db.String(255), nullable=True)
+    stuRuleID = db.Column(db.Integer, db.ForeignKey('StudentRule.stuRuleID'), nullable=True)
+    StudentRule = db.relationship('StudentRule', backref=db.backref('students', lazy=True))
 
 # Model Year
 class Year(db.Model):

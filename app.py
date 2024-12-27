@@ -119,6 +119,7 @@ def reset_password(token):
             return redirect(url_for('login'))
 
     return render_template('rpass.html', token=token)
+### Resetpassword end ###
 ###LOGIN end###
 
 ###LOGOUT start###
