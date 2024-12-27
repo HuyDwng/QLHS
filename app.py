@@ -704,9 +704,6 @@ def add_student():
         phone_number = form.phoneNumber.data
         email = form.email.data
 
-        print(f"Ngày sinh nhận được từ form: {dateOfBirth}")
-        print(f"dateOfBirth: {dateOfBirth}, type: {type(dateOfBirth)}")
-
         # Kiểm tra ngày sinh hợp lệ
         if isinstance(dateOfBirth, str):
             try:
@@ -762,7 +759,7 @@ def add_student():
 
             db.session.commit()
 
-            flash('Thông báo thành công!', 'success')
+            flash('Thêm học sinh thành công!', 'success')
             return render_template('add_student.html', form=form)  # Giữ lại form và thông báo thành công
 
         except Exception as e:
