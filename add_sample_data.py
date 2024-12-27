@@ -9,6 +9,7 @@ app = create_app()
 def add_sample_data():
     with app.app_context():
         # Thêm người dùng
+        ################
         admin_user = User(
             username='admin',
             password=generate_password_hash('123'),
