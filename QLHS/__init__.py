@@ -41,7 +41,7 @@ def create_app():
 
     # Import models để tạo bảng trong cơ sở dữ liệu
     with app.app_context():
-        from .models import User, PhoneNumber, Email, Admin, Staff, Teacher, ClassRule, Class, StudentRule, Student, Year, Semester, Subject, PointType, Point, Teach, Study
+        from .models import User, PhoneNumber, Email, Teacher, ClassRule, Class, StudentRule, Student, Year, Semester, Subject, PointType, Point, Teach, Study
         db.create_all()
 
     return app

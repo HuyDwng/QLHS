@@ -731,107 +731,6 @@ def export_scores():
                            selected_class=selected_class,
                            subject=subject)
 
-# @app.route('/export_scores', methods=['GET', 'POST'])
-# @login_required(role='teacher')
-# def export_scores():
-#     # Xác thực người dùng và lấy thông tin giáo viên
-#     if current_user.is_authenticated:
-#         teacher = Teacher.query.filter_by(teacherID=current_user.userID).first()
-#         if not teacher:
-#             flash('Không tìm thấy giáo viên với tài khoản này!', 'danger')
-#             return redirect(url_for('login'))
-#     else:
-#         flash('Bạn cần đăng nhập để thực hiện thao tác này!', 'danger')
-#         return redirect(url_for('login'))
-#
-#     # Lấy môn học mà giáo viên dạy từ trường subjectID của giáo viên đã đăng nhập
-#     subjectID = teacher.subjectID if teacher else None
-#     teach_record = Teach.query.filter_by(teacherID=teacher.teacherID, subjectID=subjectID).first()
-#
-#     if not teach_record:
-#         flash('Bạn không có quyền xuất điểm cho môn học này!', 'danger')
-#         return redirect(url_for('some_page'))
-#
-#     # Lấy các lớp mà giáo viên dạy môn này
-#     classes = db.session.query(Class).join(Teach).filter(Teach.teacherID == teacher.teacherID,
-#                                                          Teach.subjectID == subjectID).all()
-#
-#     selected_class = None
-#     students = None
-#     student_scores = {}
-#
-#     semesters = Semester.query.order_by(Semester.yearID.desc(), Semester.semesterID.asc()).limit(2).all()
-#     year = None
-#     if semesters:
-#         # Lấy năm học từ học kỳ mới nhất
-#         year = Year.query.filter_by(yearID=semesters[0].yearID).first()
-#
-#     if request.method == 'POST':
-#         selected_class_id = request.form.get('class')  # Lấy ID lớp mà giáo viên chọn
-#         selected_class = db.session.get(Class, selected_class_id)
-#
-#         if not selected_class:
-#             flash('Lớp không hợp lệ!', 'danger')
-#             return redirect(url_for('export_scores'))
-#
-#         # Lấy danh sách học sinh trong lớp đã chọn
-#         students = db.session.query(Student).join(Study).filter(Study.classID == selected_class_id).all()
-#
-#         # Lấy điểm của học sinh trong lớp này theo môn học, học kỳ và các loại điểm
-#         for student in students:
-#             student_scores[student.studentID] = {
-#                 'name': student.name,
-#                 'class': [selected_class.class_name],
-#                 'scores': {},
-#             }
-#
-#             for semester in semesters:
-#                 student_scores[student.studentID]['scores'][semester.semesterName] = {}
-#
-#                 # Lấy thông tin năm học từ Semester
-#                 if year:
-#                     student_scores[student.studentID]['year'] = year.yearName
-#
-#                 total_weighted_score = 0
-#                 total_weighted_count = 0
-#
-#                 # Duyệt qua từng loại điểm
-#                 for point_type in PointType.query.all():
-#                     points = db.session.query(Point).filter_by(
-#                         studentID=student.studentID,
-#                         subjectID=subjectID,
-#                         semesterID=semester.semesterID,
-#                         pointTypeID=point_type.pointTypeID
-#                     ).all()  # Lấy tất cả điểm cho loại điểm này
-#
-#                     # Tính tổng điểm và tổng số lượng điểm
-#                     if points:
-#                         sum_points = sum(point.value for point in points if point.value is not None)
-#                         count_points = len([point for point in points if point.value is not None])
-#
-#                         if count_points > 0:
-#                             # Tính điểm theo hệ số
-#                             weighted_score = (sum_points * point_type.pointTypeID)  # Nhân tổng điểm với hệ số
-#                             total_weighted_score += weighted_score
-#                             total_weighted_count += count_points * point_type.pointTypeID  # Cộng số lượng đã nhân với hệ số
-#
-#                 # Tính điểm trung bình học kỳ
-#                 if total_weighted_count > 0:
-#                     average_score = total_weighted_score / total_weighted_count
-#                     average_score = round(average_score, 2)
-#                 else:
-#                     average_score = None
-#
-#                 # Lưu điểm trung bình vào cấu trúc dữ liệu
-#                 student_scores[student.studentID]['scores'][semester.semesterName]['average'] = average_score
-#
-#     return render_template('export_scores.html',
-#                            classes=classes,
-#                            students=student_scores,
-#                            semesters=semesters,
-#                            year=year,
-#                            selected_class=selected_class)
-### Xuất điểm end ###
 
 ###Teacher end###
 
@@ -888,13 +787,13 @@ def add_student():
         # Kiểm tra số điện thoại đã tồn tại
         existing_phone = PhoneNumber.query.filter_by(phoneNumber=phone_number).first()
         if existing_phone:
-            flash(f"Số điện thoại {phone_number} đã được sử dụng bởi học sinh khác.", "danger")
+            flash(f"Số điện thoại {phone_number} đã được liên kết.", "danger")
             return render_template('add_student.html', form=form)  # Giữ lại form và hiển thị lỗi
 
         # Kiểm tra email đã tồn tại
         existing_email = Email.query.filter_by(email=email).first()
         if existing_email:
-            flash(f"Email {email} đã được sử dụng bởi học sinh khác.", "danger")
+            flash(f"Email {email} đã được liên kết.", "danger")
             return render_template('add_student.html', form=form)  # Giữ lại form và hiển thị lỗi
 
         try:

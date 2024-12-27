@@ -1,7 +1,7 @@
 from datetime import date
 import random
 from QLHS import create_app, db  
-from QLHS.models import User, UserRole, PhoneNumber, Email, Admin, Staff, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
+from QLHS.models import User, UserRole, PhoneNumber, Email, Teacher, Class, Student, Year, Semester, Subject, PointType, Point, Teach, Study, ClassRule, StudentRule
 from werkzeug.security import generate_password_hash
 
 app = create_app()
