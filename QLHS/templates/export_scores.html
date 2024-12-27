@@ -42,91 +42,102 @@
 </head>
 
 <body>
-    <h1>Xuất Điểm</h1>
+<h1>Xuất Điểm</h1>
+{% with messages = get_flashed_messages(with_categories=True) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }}" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+<!-- Form chọn lớp -->
+<form method="POST" action="{{ url_for('export_scores') }}">
+    <label for="class">Chọn lớp:</label>
+    <select name="class" id="class">
+        <option value="">-- Chọn lớp --</option>
+        {% for class in classes %}
+        <option value="{{ class.classID }}" {% if selected_class and selected_class.classID== class.classID %} selected
+                {% endif %}>
+            {{ class.class_name }}
+        </option>
+        {% endfor %}
+    </select>
+    <button type="submit">Xem điểm</button>
+    <button id="generatePDF">Xuất PDF</button>
+</form>
 
-    <!-- Form chọn lớp -->
-    <form method="POST" action="{{ url_for('export_scores') }}">
-        <label for="class">Chọn lớp:</label>
-        <select name="class" id="class">
-            <option value="">-- Chọn lớp --</option>
-            {% for class in classes %}
-                <option value="{{ class.classID }}" {% if selected_class and selected_class.classID == class.classID %} selected {% endif %}>
-                    {{ class.class_name }}
-                </option>
+{% if students %}
+<div id="table-content">
+    <h2>Bảng Điểm Môn Học {{ selected_class.class_name }} Năm Học {{ year.yearName }}</h2>
+    <h4>Môn học: {{subject.subjectName}}</h4>
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid black;">
+        <thead>
+        <tr>
+            <th style="border: 1px solid black; padding: 5px; text-align: center; width: 5%;">Số Thứ Tự</th>
+            <th style="border: 1px solid black; padding: 8px; text-align: center;">Họ Tên</th>
+            <th style="border: 1px solid black; padding: 8px; text-align: center;">Lớp</th>
+            {% for semester in semesters %}
+            <th style="border: 1px solid black; padding: 8px; text-align: center;">Điểm Trung Bình {{
+                semester.semesterName }}
+            </th>
             {% endfor %}
-        </select>
-        <button type="submit">Xem điểm</button>
-        <button id="generatePDF">Xuất PDF</button>
-    </form>
+            <th style="border: 1px solid black; padding: 8px; text-align: center;">Điểm Trung Bình Tổng</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for student in students.values() %}
+        <tr>
+            <td style="border: 1px solid black; padding: 5px; text-align: center; width: 5%;">{{ loop.index }}</td>
+            <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ student.name }}</td>
+            <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ student.class[0] }}</td>
+            {% for semester in semesters %}
+            <td style="border: 1px solid black; padding: 8px; text-align: center;">
+                {% set average_score = student.scores[semester.semesterName].average %}
+                {% if average_score is not none %}
+                {{ average_score }}
+                {% else %}
+                -
+                {% endif %}
+            </td>
+            {% endfor %}
+            <td style="border: 1px solid black; padding: 8px; text-align: center;">
+                {% if student.overall_average is not none %}
+                {{ student.overall_average }}
+                {% else %}
+                -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
-    {% if students %}
-        <div id="table-content">
-            <h2>Bảng Điểm Môn Học {{ selected_class.class_name }} Năm Học {{ year.yearName }}</h2>
-            <h4>Môn học: {{subject.subjectName}}</h4>
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid black;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid black; padding: 5px; text-align: center; width: 5%;">Số Thứ Tự</th>
-                        <th style="border: 1px solid black; padding: 8px; text-align: center;">Họ Tên</th>
-                        <th style="border: 1px solid black; padding: 8px; text-align: center;">Lớp</th>
-                        {% for semester in semesters %}
-                            <th style="border: 1px solid black; padding: 8px; text-align: center;">Điểm Trung Bình {{ semester.semesterName }}</th>
-                        {% endfor %}
-                        <th style="border: 1px solid black; padding: 8px; text-align: center;">Điểm Trung Bình Tổng</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students.values() %}
-                        <tr>
-                            <td style="border: 1px solid black; padding: 5px; text-align: center; width: 5%;">{{ loop.index }}</td>
-                            <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ student.name }}</td>
-                            <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ student.class[0] }}</td>
-                            {% for semester in semesters %}
-                                <td style="border: 1px solid black; padding: 8px; text-align: center;">
-                                    {% set average_score = student.scores[semester.semesterName].average %}
-                                    {% if average_score is not none %}
-                                        {{ average_score }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                            {% endfor %}
-                            <td style="border: 1px solid black; padding: 8px; text-align: center;">
-                                {% if student.overall_average is not none %}
-                                    {{ student.overall_average }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
+<!-- Button to Export to PDF -->
 
-    <!-- Button to Export to PDF -->
+<script>
+    document.getElementById('generatePDF').addEventListener('click', function(event) {
+        event.preventDefault(); // Ngừng gửi form
 
-    <script>
-        document.getElementById('generatePDF').addEventListener('click', function(event) {
-            event.preventDefault(); // Ngừng gửi form
+        var element = document.getElementById('table-content'); // Chỉ xuất phần bảng điểm
 
-            var element = document.getElementById('table-content'); // Chỉ xuất phần bảng điểm
+        var options = {
+            margin:       10,  // Canh lề: 10mm
+            filename:     'bang_diem_hoc_sinh.pdf', // Tên file
+            image:        { type: 'jpeg', quality: 0.98 }, // Chất lượng hình ảnh
+            html2canvas:  { scale: 2 },  // Chất lượng ảnh trong PDF
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } // Định dạng giấy A4, hướng dọc
+        };
 
-            var options = {
-                margin:       10,  // Canh lề: 10mm
-                filename:     'bang_diem_hoc_sinh.pdf', // Tên file
-                image:        { type: 'jpeg', quality: 0.98 }, // Chất lượng hình ảnh
-                html2canvas:  { scale: 2 },  // Chất lượng ảnh trong PDF
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } // Định dạng giấy A4, hướng dọc
-            };
-
-            // Tạo PDF từ phần tử đã chọn
-            html2pdf()
-                .from(element)
-                .set(options)  // Áp dụng cấu hình trên
-                .save();
-        });
-    </script>
+        // Tạo PDF từ phần tử đã chọn
+        html2pdf()
+            .from(element)
+            .set(options)  // Áp dụng cấu hình trên
+            .save();
+    });
+</script>
 </body>
 {% endblock %}
