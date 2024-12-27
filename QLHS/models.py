@@ -67,21 +67,8 @@ class Email(db.Model):
         UniqueConstraint('email', 'studentID', name='_student_email_uc'),  # Đảm bảo email chỉ gán cho 1 student
     )
 
-# Model Admin (Kế thừa từ User)
-class Admin(db.Model):
-    __tablename__ = 'Admin'
 
-    adminID = db.Column(db.Integer, db.ForeignKey('User.userID'), primary_key=True)
-    user = db.relationship('User', backref=db.backref('admin', uselist=False))
 
-# Model Staff (Kế thừa từ User)
-class Staff(db.Model):
-    __tablename__ = 'Staff'
-
-    staffID = db.Column(db.Integer, db.ForeignKey('User.userID'), primary_key=True)
-    user = db.relationship('User', backref=db.backref('staff', uselist=False))
-
-# Model Teacher (Kế thừa từ User)
 class Teacher(db.Model):
     __tablename__ = 'Teacher'
 
