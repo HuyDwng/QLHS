@@ -501,22 +501,20 @@ def enter_scores():
             flash('Không có học sinh nào trong lớp này.', 'danger')
             return redirect(url_for('enter_scores'))
 
+        # Hàm lấy phần tên đầu (dùng cho trường hợp tên cuối giống nhau)
         def get_last_name(name):
             # Tách tên ra thành các từ và trả về từ cuối cùng
             parts = name.strip().split()
             return parts[-1] if parts else ''
-
-            # Hàm lấy phần tên đầu (dùng cho trường hợp tên cuối giống nhau)
 
         def get_first_name(name):
             # Tách tên ra thành các từ và trả về tất cả các từ trừ từ cuối cùng
             parts = name.strip().split()
             return ' '.join(parts[:-1]) if len(parts) > 1 else parts[0]
 
-            # Sắp xếp học sinh theo tên cuối, nếu tên cuối giống nhau thì sắp xếp theo tên đầu
-
+        # Sắp xếp học sinh theo tên cuối, nếu tên cuối giống nhau thì sắp xếp theo tên đầu
         students = sorted(students, key=lambda student: (
-        get_last_name(student.name.lower()), get_first_name(student.name.lower())))
+            get_last_name(student.name.lower()), get_first_name(student.name.lower())))
 
         # Khởi tạo student_points cho từng học sinh
         for student in students:
@@ -532,6 +530,7 @@ def enter_scores():
 
         if 'submit_scores' in request.form:
             has_error = False  # Biến để theo dõi xem có lỗi nào xảy ra không
+            is_updated = False  # Biến kiểm tra xem có điểm nào được cập nhật hay không
 
             for student in students:
                 for column in points_columns:
@@ -543,14 +542,17 @@ def enter_scores():
 
                         if score:
                             try:
-                                score_value = float(score)
-                                # Kiểm tra tính hợp lệ của điểm
+                                # Kiểm tra xem giá trị nhập vào có phải là số hay không
+                                score_value = float(score)  # Chuyển điểm thành số
+
+                                # Kiểm tra tính hợp lệ của điểm (phải trong khoảng từ 0 đến 10)
                                 if score_value < 0 or score_value > 10:
                                     raise ValueError("Điểm phải nằm trong khoảng từ 0 đến 10.")
                             except ValueError as e:
+                                # Thông báo lỗi nếu không phải số hoặc không hợp lệ
                                 flash(f"Điểm không hợp lệ cho học sinh {student.name}: {e}", 'danger')
                                 has_error = True
-                                continue
+                                continue  # Tiếp tục với học sinh kế tiếp nếu có lỗi
 
                             # Kiểm tra xem có điểm nào đã tồn tại không
                             existing_points = Point.query.filter_by(
@@ -563,7 +565,9 @@ def enter_scores():
                             # Nếu có điểm đã tồn tại và là điểm cần sửa
                             if idx <= len(existing_points):
                                 existing_point = existing_points[idx - 1]  # Lấy điểm tương ứng
-                                existing_point.value = score_value  # Cập nhật giá trị của điểm
+                                if existing_point.value != score_value:
+                                    existing_point.value = score_value  # Cập nhật giá trị của điểm
+                                    is_updated = True  # Đánh dấu là có sự thay đổi
                             else:
                                 # Nếu không có điểm tương ứng, thêm điểm mới
                                 new_point = Point(
@@ -574,15 +578,19 @@ def enter_scores():
                                     value=score_value
                                 )
                                 db.session.add(new_point)  # Thêm điểm mới
+                                is_updated = True  # Đánh dấu là có sự thay đổi
 
-            if not has_error:  # Chỉ commit nếu không có lỗi
+            if is_updated and not has_error:  # Chỉ commit và thông báo nếu có sự thay đổi và không có lỗi
                 db.session.commit()
                 flash('Điểm đã được cập nhật thành công!', 'success')
+            elif not is_updated:  # Nếu không có sự thay đổi
+                flash('Không có sự thay đổi nào để cập nhật.', 'warning')
             else:
                 flash('Không thể cập nhật điểm do có lỗi!', 'danger')
 
-            return redirect(url_for('enter_scores'))
+            return redirect(url_for('enter_scores'))  # Đảm bảo luôn có return sau khi cập nhật
 
+    # Nếu không phải là POST request, hoặc sau khi xử lý POST xong, luôn trả về render_template
     return render_template('enter_scores.html',
                            classes=classes,
                            semesters=semesters,
@@ -592,6 +600,8 @@ def enter_scores():
                            selected_class=selected_class,
                            points_columns=points_columns,
                            student_points=student_points)
+
+
 ### Nhập điểm end ###
 
 ### Xuất điểm start ###
