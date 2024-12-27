@@ -96,7 +96,7 @@
                     {% set student_point = student_points.get(student.studentID, {}).get(column.pointTypeID, []) %}
                     {% if idx <= student_point|length %}
                     <input type="number" name="score_{{ student.studentID }}_{{ column.pointTypeID }}_{{ idx }}"
-                           value="{{ student_point[idx - 1].value }}" step="0.1"
+                           value="{{ student_point[idx - 1].value }}" step="0.01"
                            class="form-control" placeholder="Điểm cột {{ idx }}">
                     {% else %}
                     <input type="number" name="score_{{ student.studentID }}_{{ column.pointTypeID }}_{{ idx }}"
